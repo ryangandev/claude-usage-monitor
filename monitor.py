@@ -6,6 +6,7 @@ Standard library only.
 """
 
 import argparse
+import bisect
 import glob
 import json
 import os
@@ -298,8 +299,13 @@ def build_state(store, cfg, now=None):
     for c in calls:
         c["t"] = parse_ts(c["ts"])
 
+    times = [c["t"] for c in calls]
+    cum = [0.0]
+    for c in calls:
+        cum.append(cum[-1] + c["cost"])
+
     def cost_between(a, b):
-        return sum(c["cost"] for c in calls if a <= c["t"] < b)
+        return cum[bisect.bisect_left(times, b)] - cum[bisect.bisect_left(times, a)]
 
     tier = plan_tier()
     samples = meter_samples()
