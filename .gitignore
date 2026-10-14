@@ -1,0 +1,4 @@
+state.db
+state.db-*
+config.json
+__pycache__/
