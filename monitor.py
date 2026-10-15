@@ -286,6 +286,55 @@ def family(model):
             return name
     return "other"
 
+_history_cache = {"at": 0.0, "value": None}
+
+
+def weekly_history(store, cfg, samples, now, weeks=8):
+    """Spend and the highest official reading for each of the last weekly windows."""
+    if _history_cache["value"] is not None and time.time() - _history_cache["at"] < 60:
+        return _history_cache["value"]
+    w_start, _ = week_bounds(now, cfg["week_anchor"])
+    first = w_start - timedelta(days=7 * (weeks - 1))
+    out = [{"start": iso(first + timedelta(days=7 * i)), "end": iso(first + timedelta(days=7 * (i + 1))),
+            "total": 0.0, "subagent": 0.0, "opus": 0.0, "sonnet": 0.0, "haiku": 0.0, "fable": 0.0, "other": 0.0,
+            "official_peak": None} for i in range(weeks)]
+    with store.lock:
+        rows = store.db.execute("SELECT ts, model, agent, cost FROM calls WHERE ts >= ?", (iso(first),)).fetchall()
+    for ts, model, agent, cost in rows:
+        i = (parse_ts(ts) - first) // timedelta(days=7)
+        if 0 <= i < weeks:
+            w = out[i]
+            w["total"] += cost
+            w[family(model)] += cost
+            if agent:
+                w["subagent"] += cost
+    for s in samples:
+        i = (s["t"] - first) // timedelta(days=7)
+        if 0 <= i < weeks and s["sd"] is not None:
+            # A reading taken right at the reset still shows the old week.
+            if s["t"] - (first + timedelta(days=7 * i)) > timedelta(minutes=5):
+                out[i]["official_peak"] = max(out[i]["official_peak"] or 0, s["sd"])
+    for w in out:
+        for k in ("total", "subagent", "opus", "sonnet", "haiku", "fable", "other"):
+            w[k] = round(w[k], 2)
+    _history_cache.update(at=time.time(), value=out)
+    return out
+
+
+def week_days(calls, w_start, now):
+    """The current weekly window cut into seven 24-hour days from its reset."""
+    days = []
+    for i in range(7):
+        a, b = w_start + timedelta(days=i), w_start + timedelta(days=i + 1)
+        d = {"start": iso(a), "end": iso(b), "total": 0.0, "opus": 0.0, "sonnet": 0.0, "haiku": 0.0,
+             "fable": 0.0, "other": 0.0, "state": "past" if b <= now else "current" if a <= now else "future"}
+        for c in calls:
+            if a <= c["t"] < b:
+                d["total"] += c["cost"]
+                d[family(c["model"])] += c["cost"]
+        days.append({k: (round(v, 2) if isinstance(v, float) else v) for k, v in d.items()})
+    return days
+
 
 def build_state(store, cfg, now=None):
     now = now or datetime.now(timezone.utc)
@@ -413,6 +462,10 @@ def build_state(store, cfg, now=None):
         "active_agents": sum(1 for a in agent_list if a["active"]),
         "sessions": session_list[:20],
         "last_call": calls[-1]["ts"] if calls else None,
+        "week_days": week_days(week, w_start, now),
+        "week_elapsed_days": round((now - w_start) / timedelta(days=1), 2),
+        "daily_budget": round(w_rate * 100 / 7, 2),
+        "weeks": weekly_history(store, cfg, samples, now),
     }
 
 
