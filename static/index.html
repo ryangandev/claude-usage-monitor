@@ -1,386 +1,563 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="system">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude 用量</title>
+<script>
+try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'system'; } catch (e) {}
+</script>
 <style>
-/* Layout: a meter strip on top, then trend, breakdowns and live tables in one column. */
 :root {
-  --bg: #f6f6f3; --panel: #ffffff; --fg: #1d1f1c; --muted: #6b6f68; --line: #e3e3dd;
-  --opus: #3d5a80; --sonnet: #2a9d8f; --fable: #b07d2b; --haiku: #8d6cab; --other: #9a9d96;
-  --ok: #2f7d4f; --warn: #b7791f; --bad: #c0392b; --track: #ecece6;
-  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --app: #F4F4F5; --panel: #FFFFFF; --text: #18191B; --muted: #62666D; --faint: #A0A3A9;
+  --border: #E4E4E7; --hover: rgba(0,0,0,.04); --active: rgba(0,0,0,.06);
+  --thumb: #FFFFFF; --thumb-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.06);
+  --opus: #5E6AD2; --sonnet: #3AAE9B; --fable: #C2577F; --haiku: #8B93A1; --other: #A0A3A9;
+  --warn: #B45309; --warn-fill: #F59E0B; --danger: #DC2626; --ok: #16A34A;
+  --tip: #18191B; --tip-text: #FFFFFF;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
   color-scheme: light;
 }
+:root[data-theme="dark"] {
+  --app: #08090A; --panel: #0F1011; --text: #EDEDEF; --muted: #8A8F98; --faint: #4F535A;
+  --border: rgba(255,255,255,.08); --hover: rgba(255,255,255,.04); --active: rgba(255,255,255,.07);
+  --thumb: #26282C; --thumb-shadow: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
+  --opus: #7C86E6; --sonnet: #4FC2AE; --fable: #E07AA3; --haiku: #A2AAB8; --other: #6B7079;
+  --warn: #F5A54A; --warn-fill: #F5A54A; --danger: #F06A6A; --ok: #4CB782;
+  --tip: #EDEDEF; --tip-text: #08090A;
+  color-scheme: dark;
+}
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #141614; --panel: #1c1f1c; --fg: #e8e9e4; --muted: #9a9e96; --line: #2c302c;
-    --opus: #7da2d6; --sonnet: #4fc1b2; --fable: #d9a54e; --haiku: #b597d4; --other: #777b74;
-    --ok: #5cbf83; --warn: #e0a84a; --bad: #ef6b5b; --track: #262a26; color-scheme: dark;
+  :root[data-theme="system"] {
+    --app: #08090A; --panel: #0F1011; --text: #EDEDEF; --muted: #8A8F98; --faint: #4F535A;
+    --border: rgba(255,255,255,.08); --hover: rgba(255,255,255,.04); --active: rgba(255,255,255,.07);
+    --thumb: #26282C; --thumb-shadow: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
+    --opus: #7C86E6; --sonnet: #4FC2AE; --fable: #E07AA3; --haiku: #A2AAB8; --other: #6B7079;
+    --warn: #F5A54A; --warn-fill: #F5A54A; --danger: #F06A6A; --ok: #4CB782;
+    --tip: #EDEDEF; --tip-text: #08090A;
+    color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
-  --bg: #141614; --panel: #1c1f1c; --fg: #e8e9e4; --muted: #9a9e96; --line: #2c302c;
-  --opus: #7da2d6; --sonnet: #4fc1b2; --fable: #d9a54e; --haiku: #b597d4; --other: #777b74;
-  --ok: #5cbf83; --warn: #e0a84a; --bad: #ef6b5b; --track: #262a26; color-scheme: dark;
-}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
-.wrap { max-width: 76rem; margin-inline: auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
-h1 { font-size: 20px; font-weight: 600; margin: 0; }
-.live { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-.dot.stale { background: var(--bad); }
-.chip { font: 12px var(--mono); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
-.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; display: grid; gap: 8px; align-content: start; }
-.card h2 { font-size: 14px; font-weight: 600; margin: 0; }
-.note { font-size: 12px; color: var(--muted); margin: 0; }
-.meter .big { font: 600 40px/1.1 var(--sans); font-variant-numeric: tabular-nums; }
-.meter .big small { font-size: 16px; font-weight: 500; color: var(--muted); }
-.gauge { position: relative; height: 12px; border-radius: 6px; background: var(--track); overflow: hidden; }
-.gauge .off { position: absolute; inset: 0 auto 0 0; background: var(--fg); opacity: .85; }
-.gauge .est { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--fg) 0 4px, transparent 4px 7px); opacity: .45; }
-.gauge .mark { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
-.meter.warn .big { color: var(--warn); }
-.meter.warn .off { background: var(--warn); }
-.meter.bad .big { color: var(--bad); }
-.meter.bad .off { background: var(--bad); }
-.facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 12px; }
-.facts dt { color: var(--muted); }
-.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
-.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
-.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-.kpi .k { font-size: 12px; color: var(--muted); }
-.kpi .v { font: 600 22px/1.3 var(--sans); font-variant-numeric: tabular-nums; }
-.chart { position: relative; min-height: 220px; }
-.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
-.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 12px; box-shadow: 0 4px 16px rgb(0 0 0 / .12); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
-.bars { display: grid; gap: 8px; }
-.bar .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
-.bar .row span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bar .t { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
-.bar .f { height: 100%; border-radius: 4px; }
-.tbox { overflow: auto; max-height: 26rem; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-th { position: sticky; top: 0; background: var(--panel); text-align: left; font-weight: 500; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-td.n, th.n { text-align: right; white-space: nowrap; }
-td.desc { min-width: 14rem; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; white-space: nowrap; }
-.pill.max { color: var(--bad); border-color: currentColor; }
-.pill.xhigh { color: var(--warn); border-color: currentColor; }
-.pill.opus { color: var(--opus); border-color: currentColor; }
-.pill.sonnet { color: var(--sonnet); border-color: currentColor; }
-.pill.fable { color: var(--fable); border-color: currentColor; }
-.on { color: var(--ok); font-weight: 600; }
-.pace { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; }
-.pace b { font-variant-numeric: tabular-nums; }
-.pace .ahead { color: var(--bad); }
-.pace .behind { color: var(--ok); }
-footer { font-size: 12px; color: var(--muted); display: grid; gap: 4px; max-width: 70ch; }
+html, body { margin: 0; background: var(--app); }
+body {
+  color: var(--text); font: 13px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2 { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.muted { color: var(--muted); }
+
+.shell { display: flex; align-items: flex-start; max-width: 1480px; margin: 0 auto; }
+aside { flex: 0 0 232px; position: sticky; top: 0; padding: 14px 10px; display: flex; flex-direction: column; gap: 18px; min-height: 100vh; }
+.brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px; font-weight: 600; letter-spacing: -0.01em; }
+.logo { width: 22px; height: 22px; border-radius: 6px; background: var(--opus); display: grid; place-items: center; }
+.tier { margin-left: auto; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 11px; font-weight: 500; color: var(--muted); }
+nav { display: flex; flex-direction: column; gap: 1px; }
+.nav { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-weight: 500; transition: transform 120ms var(--ease-out), background-color 150ms ease; }
+.nav[aria-current="true"] { color: var(--text); background: var(--active); }
+.nav .count { margin-left: auto; font-size: 11px; }
+.appearance { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
+.label { font-size: 11px; font-weight: 500; color: var(--muted); }
+
+.seg { position: relative; display: flex; padding: 2px; border-radius: 8px; background: var(--active); }
+.seg .thumb { position: absolute; top: 2px; bottom: 2px; left: 2px; border-radius: 6px; background: var(--thumb); box-shadow: var(--thumb-shadow); transition: transform 200ms var(--ease-out); }
+.seg button { position: relative; flex: 1 1 0; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: transform 120ms var(--ease-out), color 150ms ease; }
+.seg button[aria-checked="true"] { color: var(--text); }
+.seg.small { border-radius: 7px; }
+.seg.small .thumb { border-radius: 5px; }
+.seg.small button { width: 64px; height: 26px; border-radius: 5px; }
+.seg button:active, .nav:active, .more:active { transform: scale(.97); }
+
+main { flex: 1 1 auto; min-width: 0; padding: 8px 8px 8px 0; }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; min-height: calc(100vh - 16px); }
+.topbar { position: sticky; top: 0; z-index: 5; height: 46px; padding: 0 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); background: var(--panel); border-radius: 10px 10px 0 0; }
+.live { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.dot.stale { background: var(--danger); }
+.content { padding: 28px 28px 40px; display: flex; flex-direction: column; gap: 32px; }
+section { scroll-margin-top: 64px; }
+
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.sub { margin-top: 4px; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); font-weight: 500; }
+.badge.warn { color: var(--warn); }
+.badge.ok { color: var(--ok); }
+.badge.calm { color: var(--muted); }
+
+.kpis { display: flex; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.kpi { flex: 1 1 200px; min-width: 0; padding: 16px 18px; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); display: flex; flex-direction: column; gap: 10px; }
+.kpi-top { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.kpi-top span:last-child { font-size: 12px; text-align: right; }
+.kpi-value { font-size: 26px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.track { position: relative; height: 4px; border-radius: 2px; background: var(--active); }
+.track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+.track .official { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--text); opacity: .35; }
+.track .tick { position: absolute; top: -3px; width: 2px; height: 10px; margin-left: -1px; border-radius: 1px; background: var(--text); }
+
+.section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.section-head .title { display: flex; align-items: baseline; gap: 10px; }
+h2 { font-size: 14px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+.chart-box { border: 1px solid var(--border); border-radius: 10px; padding: 20px 18px 14px; }
+.chart { display: flex; gap: 12px; }
+.plot-wrap { flex: 1 1 auto; min-width: 0; }
+.plot { position: relative; height: 200px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--border); }
+.plot.days { gap: 10px; }
+.plot.hours { gap: 2px; }
+.grid-line { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border); opacity: .6; }
+.budget-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); opacity: .7; }
+.col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; justify-content: center; align-items: flex-end; }
+.bar { display: flex; flex-direction: column-reverse; gap: 1px; border-radius: 4px 4px 0 0; overflow: hidden; }
+.days .bar { width: min(40px, 60%); }
+.hours .bar { width: 100%; border-radius: 2px 2px 0 0; }
+.future { width: min(40px, 60%); height: 100%; border: 1px dashed var(--border); border-bottom: 0; border-radius: 4px 4px 0 0; }
+.xlabels { display: flex; gap: 10px; padding-top: 8px; font-size: 12px; color: var(--muted); }
+.xlabels > div { flex: 1 1 0; min-width: 0; text-align: center; }
+.xlabels .today { color: var(--text); font-weight: 500; }
+.xlabels.spread { justify-content: space-between; gap: 0; font-size: 11px; }
+.xlabels.spread > div { flex: none; }
+.yaxis { position: relative; flex: none; width: 60px; height: 200px; font-size: 11px; color: var(--muted); }
+.yaxis span { position: absolute; left: 0; transform: translateY(-50%); white-space: nowrap; }
+.yaxis .strong { color: var(--text); }
+.tip { position: absolute; left: 50%; z-index: 3; width: max-content; max-width: 220px; padding: 8px 10px; border-radius: 7px; background: var(--tip); color: var(--tip-text); font-size: 12px; pointer-events: none;
+  opacity: 0; transform: translate(-50%, 4px) scale(.97); transform-origin: bottom center; transition: opacity 125ms ease-out, transform 125ms ease-out; }
+.tip .mono { opacity: .75; }
+.col:first-child .tip { left: 0; transform: translate(0, 4px) scale(.97); transform-origin: bottom left; }
+.col:last-child .tip { left: auto; right: 0; transform: translate(0, 4px) scale(.97); transform-origin: bottom right; }
+
+.split { display: flex; flex-wrap: wrap; gap: 28px; }
+.split > section { flex: 1 1 320px; min-width: 0; }
+.effort { display: grid; grid-template-columns: 128px minmax(0, 1fr) 60px 48px; align-items: center; gap: 12px; height: 32px; }
+.meter { height: 6px; border-radius: 3px; background: var(--active); }
+.meter > div { height: 100%; border-radius: 3px; }
+.stack { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; margin-bottom: 4px; }
+.model { display: flex; align-items: center; gap: 10px; height: 36px; border-bottom: 1px solid var(--border); }
+.right { text-align: right; }
+.note { margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+.table { overflow-x: auto; border-top: 1px solid var(--border); }
+.rows { min-width: 760px; }
+.row { display: grid; align-items: center; gap: 12px; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--border); }
+.row.agent { grid-template-columns: 16px minmax(0, 1fr) 148px 56px 60px 72px 80px; }
+.row.week { grid-template-columns: minmax(0, 1fr) 84px 72px 72px 168px; }
+.row.session { grid-template-columns: minmax(0, 1fr) 96px 64px 76px 76px 80px; }
+.row.header { height: 32px; color: var(--muted); font-size: 12px; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strong { font-weight: 500; }
+.chip { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 11px; border: 1px solid var(--border); font-size: 12px; white-space: nowrap; }
+.chip i { width: 7px; height: 7px; border-radius: 50%; }
+.peak { display: flex; align-items: center; gap: 8px; }
+.peak .meter { flex: 1 1 auto; height: 4px; }
+.more { margin-top: 10px; height: 30px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; cursor: pointer; transition: transform 120ms var(--ease-out), background-color 150ms ease; }
+.empty { padding: 14px 10px; color: var(--muted); border-bottom: 1px solid var(--border); }
+footer { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
 footer p { margin: 0; }
-.err { color: var(--bad); }
+
+@media (hover: hover) and (pointer: fine) {
+  .nav:hover, .row:not(.header):hover, .more:hover { background: var(--hover); }
+  .nav[aria-current="true"]:hover { background: var(--active); }
+  .col:hover .tip { opacity: 1; transform: translate(-50%, 0); }
+  .col:first-child:hover .tip, .col:last-child:hover .tip { transform: none; }
+  .col:hover .bar { filter: brightness(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg .thumb, .seg button, .nav, .more { transition: none; }
+  .tip { transition: opacity 125ms ease; }
+  .seg button:active, .nav:active, .more:active { transform: none; }
+}
+@media (max-width: 760px) {
+  .shell { flex-direction: column; align-items: stretch; }
+  aside { position: static; min-height: 0; flex: none; padding: 12px 16px; gap: 12px; }
+  nav { flex-direction: row; flex-wrap: wrap; }
+  .appearance { margin-top: 0; padding: 0; max-width: 300px; }
+  main { padding: 0 8px 8px; }
+  .content { padding: 20px 16px 32px; }
+  .topbar { padding: 0 16px; }
+  .effort { grid-template-columns: 112px minmax(0, 1fr) 56px 44px; }
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Claude 用量</h1>
-    <span class="live"><span class="dot" id="dot"></span><span id="updated">连接中</span></span>
-    <span class="chip" id="tier">-</span>
-  </header>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <div class="logo"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9h3l2-5 2 8 2-3h3"/></svg></div>
+      <span>Claude 用量</span>
+      <span class="tier" id="tier">-</span>
+    </div>
+    <nav aria-label="页面">
+      <a class="nav" href="#overview" aria-current="true"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5H9z"/></svg><span>概览</span></a>
+      <a class="nav" href="#agents"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM3 13.5c.6-2.4 2.6-4 5-4s4.4 1.6 5 4"/></svg><span>子代理</span><span class="count mono" id="nav-agents"></span></a>
+      <a class="nav" href="#sessions"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg><span>会话</span><span class="count mono" id="nav-sessions"></span></a>
+      <a class="nav" href="#weeks"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg><span>往周</span><span class="count mono" id="nav-weeks"></span></a>
+    </nav>
+    <div class="appearance">
+      <span class="label" id="appearance-label">外观</span>
+      <div class="seg" role="radiogroup" aria-labelledby="appearance-label" id="theme">
+        <div class="thumb" style="width: calc((100% - 4px) / 3)"></div>
+        <button role="radio" data-value="system"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-11zM6 13.5h4M8 10.5v3"/></svg>系统</button>
+        <button role="radio" data-value="light"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>浅色</button>
+        <button role="radio" data-value="dark"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z"/></svg>深色</button>
+      </div>
+    </div>
+  </aside>
 
-  <div class="grid">
-    <section class="card meter" id="m-week">
-      <h2>每周额度 · 全部模型</h2>
-      <div class="big"><span id="w-est">-</span><small>%（估算）</small></div>
-      <div class="gauge"><div class="off" id="w-off"></div><div class="est" id="w-bar"></div><div class="mark" style="left:70%"></div><div class="mark" style="left:90%"></div></div>
-      <dl class="facts">
-        <dt>官方读数</dt><dd id="w-official">-</dd>
-        <dt>之后消耗</dt><dd id="w-since">-</dd>
-        <dt>重置时间</dt><dd id="w-reset">-</dd>
-        <dt>照当前速度用满</dt><dd id="w-eta">-</dd>
-        <dt>换算</dt><dd id="w-rate">-</dd>
-      </dl>
-    </section>
-    <section class="card meter" id="m-five">
-      <h2>5 小时窗口</h2>
-      <div class="big"><span id="h-est">-</span><small>%（估算）</small></div>
-      <div class="gauge"><div class="off" id="h-off"></div><div class="est" id="h-bar"></div><div class="mark" style="left:70%"></div><div class="mark" style="left:90%"></div></div>
-      <dl class="facts">
-        <dt>官方读数</dt><dd id="h-official">-</dd>
-        <dt>窗口</dt><dd id="h-window">-</dd>
-        <dt>照当前速度用满</dt><dd id="h-eta">-</dd>
-        <dt>换算</dt><dd id="h-rate">-</dd>
-      </dl>
-    </section>
-  </div>
+  <main>
+    <div class="panel">
+      <div class="topbar">
+        <span class="muted">用量</span>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+        <span class="strong">本周</span>
+        <span class="live"><span class="dot" id="dot"></span><span id="updated">连接中</span></span>
+      </div>
 
-  <section class="card" id="weekly">
-    <h2>每周统计</h2>
-    <p class="note" id="wk-range">-</p>
-    <div class="pace" id="wk-pace"></div>
-    <div class="chart" id="wk-days"></div>
-    <p class="note">每天从重置时刻起算 24 小时。虚线是日均配额：一周额度平均分到 7 天，每天约能用多少。</p>
-  </section>
+      <div class="content">
+        <section id="overview">
+          <div class="head">
+            <div>
+              <h1>本周</h1>
+              <div class="sub" id="range">-</div>
+            </div>
+            <span class="badge calm" id="pace"></span>
+          </div>
+        </section>
 
-  <section class="card">
-    <h2>往周对比</h2>
-    <div class="tbox"><table>
-      <thead><tr><th>额度周期</th><th class="n">API 等价</th><th class="n">子代理占比</th><th class="n">Sonnet 占比</th><th class="n">官方最高读数</th></tr></thead>
-      <tbody id="weeks"></tbody>
-    </table></div>
-    <p class="note">10/14 之前删掉的会话没有数据，那几周的金额偏低；官方最高读数不受影响。</p>
-  </section>
+        <div class="kpis" id="kpis"></div>
 
-  <div class="kpis">
-    <div class="kpi"><div class="k">最近 1 小时</div><div class="v" id="k-burn">-</div></div>
-    <div class="kpi"><div class="k">今天</div><div class="v" id="k-today">-</div></div>
-    <div class="kpi"><div class="k">本额度周期</div><div class="v" id="k-week">-</div></div>
-    <div class="kpi"><div class="k">子代理占比（本周期）</div><div class="v" id="k-sub">-</div></div>
-    <div class="kpi"><div class="k">活跃子代理（15 分钟内）</div><div class="v" id="k-active">-</div></div>
-  </div>
+        <section>
+          <div class="section-head">
+            <div class="title"><h2>消耗</h2><span class="muted" id="chart-caption"></span></div>
+            <div class="legend">
+              <span id="chart-legend" class="legend"></span>
+              <div class="seg small" role="radiogroup" aria-label="图表范围" id="range-seg">
+                <div class="thumb" style="width: calc(50% - 2px)"></div>
+                <button role="radio" data-value="day">每天</button>
+                <button role="radio" data-value="hour">每小时</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-box"><div class="chart" id="chart"></div></div>
+        </section>
 
-  <section class="card">
-    <h2>最近 48 小时每小时消耗</h2>
-    <div class="legend"><span><i style="background:var(--opus)"></i>Opus</span><span><i style="background:var(--sonnet)"></i>Sonnet</span><span><i style="background:var(--fable)"></i>Fable</span><span><i style="background:var(--haiku)"></i>Haiku</span></div>
-    <div class="chart" id="hours"></div>
-  </section>
+        <div class="split">
+          <section>
+            <div class="section-head"><h2>按 effort</h2></div>
+            <div id="efforts"></div>
+            <div class="note">橙色是 xhigh 和 max。</div>
+          </section>
+          <section>
+            <div class="section-head"><h2>按模型</h2></div>
+            <div class="stack" id="model-stack"></div>
+            <div id="models"></div>
+          </section>
+        </div>
 
-  <div class="grid">
-    <section class="card"><h2>本周期 · 按模型</h2><div class="bars" id="by-model"></div></section>
-    <section class="card"><h2>本周期 · 按 effort</h2><div class="bars" id="by-effort"></div></section>
-  </div>
+        <section id="agents">
+          <div class="section-head"><div class="title"><h2>子代理</h2><span class="muted mono" id="agents-caption"></span></div></div>
+          <div class="table"><div class="rows" id="agent-rows"></div></div>
+          <button class="more" id="agents-more" hidden></button>
+        </section>
 
-  <section class="card">
-    <h2>子代理（本周期，活跃的在前）</h2>
-    <div class="tbox"><table>
-      <thead><tr><th></th><th>任务</th><th>模型</th><th>effort</th><th class="n">调用</th><th class="n">当前上下文</th><th class="n">API 等价</th><th class="n">最后活动</th></tr></thead>
-      <tbody id="agents"></tbody>
-    </table></div>
-  </section>
+        <section id="sessions">
+          <div class="section-head"><div class="title"><h2>会话</h2><span class="muted">本周花费最多</span></div></div>
+          <div class="table"><div class="rows" id="session-rows"></div></div>
+        </section>
 
-  <section class="card">
-    <h2>会话（本周期）</h2>
-    <div class="tbox"><table>
-      <thead><tr><th>会话</th><th>项目</th><th class="n">子代理</th><th class="n">主会话</th><th class="n">子代理消耗</th><th class="n">合计</th></tr></thead>
-      <tbody id="sessions"></tbody>
-    </table></div>
-  </section>
+        <section id="weeks">
+          <div class="section-head"><h2>往周</h2></div>
+          <div class="table"><div class="rows" style="min-width: 620px" id="week-rows"></div></div>
+          <div class="note">10/14 之前删掉的会话没有记录，那几周金额偏低；官方最高读数不受影响。</div>
+        </section>
 
-  <footer>
-    <p>金额是“API 等价”：把每次调用的 token 按 API 标价折算，用来衡量用量，订阅不按它收费。</p>
-    <p>官方读数来自 Claude 应用偶尔记录的额度表，估算值 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额。本周期官方读数累计变化超过 5% 后，换算比例按本周期数据自动校准，之前用默认值。</p>
-    <p>只统计这台电脑上的 Claude Code。数据存进本地数据库，之后删掉会话也不会丢。</p>
-  </footer>
+        <footer>
+          <p>金额是 API 等价：把每次调用的 token 按 API 标价折算，用来衡量用量，订阅不按它收费。</p>
+          <p id="method"></p>
+          <p>只统计这台电脑上的 Claude Code。数据存进本地数据库，之后删掉会话也不会丢。</p>
+        </footer>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const usd = (v) => '$' + (v >= 100 ? Math.round(v).toLocaleString('en') : v.toFixed(2));
-const pct = (v) => (v * 100).toFixed(1) + '%';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
+const usd = (v) => '$' + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString('en') : v.toFixed(2));
+const pct0 = (v) => Math.round(v) + '%';
+const axis = (v) => '$' + Math.round(v).toLocaleString('en');
 const compact = (v) => Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(v);
-const when = (s) => s ? new Date(s).toLocaleString('zh-CN', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '-';
-const ago = (s) => {
-  const m = Math.round((Date.now() - new Date(s)) / 60000);
-  return m < 1 ? '刚刚' : m < 60 ? m + ' 分钟前' : Math.round(m / 60) + ' 小时前';
+const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
+const md = (d) => (d.getMonth() + 1) + '/' + d.getDate();
+const hm = (d) => d.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', hour12: false});
+const dayTime = (s) => { const d = new Date(s); return '周' + WEEKDAY[d.getDay()] + ' ' + md(d) + ' ' + hm(d); };
+const FAMILIES = ['opus', 'sonnet', 'fable', 'haiku', 'other'];
+const FAMILY_NAME = {opus: 'Opus', sonnet: 'Sonnet', fable: 'Fable', haiku: 'Haiku', other: '其他'};
+const family = (m) => FAMILIES.find((f) => m.includes(f)) || 'other';
+const modelName = (m) => {
+  const f = family(m);
+  const v = m.match(new RegExp(f + '-(\\d+)(?:-(\\d{1,2}))?(?!\\d)'));
+  return FAMILY_NAME[f] + (v ? ' ' + v[1] + (v[2] ? '.' + v[2] : '') : '');
 };
-const fam = (m) => ['opus', 'sonnet', 'haiku', 'fable'].find((f) => m.includes(f)) || 'other';
-const short = (m) => m.replace('claude-', '').replace(/-(\d)-(\d)$/, ' $1.$2').replace(/-(\d)$/, ' $1');
-const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const ago = (s, now) => {
+  const min = (now - new Date(s)) / 60000;
+  if (min < 1) return '刚刚';
+  if (min < 60) return Math.floor(min) + ' 分钟前';
+  if (min < 48 * 60) return Math.floor(min / 60) + ' 小时前';
+  return md(new Date(s));
+};
+const niceMax = (v) => {
+  const step = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1))));
+  return [1, 2, 2.5, 4, 5, 8, 10].map((m) => m * step).find((x) => x >= v);
+};
 
-function meter(prefix, box, m, end) {
-  const est = Math.min(100, m.estimate), off = Math.min(est, m.official ?? 0);
-  $(prefix + '-est').textContent = est.toFixed(0);
-  $(prefix + '-off').style.width = off + '%';
-  $(prefix + '-bar').style.left = off + '%';
-  $(prefix + '-bar').style.width = (est - off) + '%';
-  box.classList.toggle('warn', est >= 70 && est < 90);
-  box.classList.toggle('bad', est >= 90);
-  $(prefix + '-official').textContent = m.official == null ? '本窗口还没有' : m.official + '%（' + when(m.official_at) + '）';
-  $(prefix + '-eta').textContent = !m.eta_full ? '最近 1 小时没有消耗'
-    : end && new Date(m.eta_full) > new Date(end) ? '重置前用不满' : when(m.eta_full);
-  $(prefix + '-rate').textContent = '每 1% ≈ ' + usd(m.dollars_per_pct) + (m.rate_source === 'calibrated' ? '（按本周期校准）' : '（默认值）');
+// Appearance: system, light or dark, remembered in this browser.
+function segment(box, value) {
+  const buttons = [...box.querySelectorAll('button')];
+  const i = Math.max(0, buttons.findIndex((b) => b.dataset.value === value));
+  buttons.forEach((b, j) => b.setAttribute('aria-checked', String(i === j)));
+  box.querySelector('.thumb').style.transform = 'translateX(' + i * 100 + '%)';
+}
+function setTheme(value, save) {
+  document.documentElement.dataset.theme = value;
+  segment($('theme'), value);
+  if (save) try { localStorage.setItem('theme', value); } catch (e) {}
+}
+$('theme').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.value, true); });
+setTheme(document.documentElement.dataset.theme, false);
+
+let view = 'day';
+try { view = localStorage.getItem('chart') || 'day'; } catch (e) {}
+segment($('range-seg'), view);
+$('range-seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  view = b.dataset.value; segment($('range-seg'), view);
+  try { localStorage.setItem('chart', view); } catch (e) {}
+  if (last) chart(last);
+});
+
+let showAllAgents = false;
+$('agents-more').addEventListener('click', () => { showAllAgents = !showAllAgents; if (last) agents(last); });
+
+function header(s) {
+  const w = s.weekly, now = new Date(s.now);
+  const tier = s.tier.match(/max_(\d+x)/);
+  $('tier').textContent = tier ? 'Max ' + tier[1] : s.tier.replace(/^default_claude_/, '');
+  const day = Math.min(7, Math.floor(s.week_elapsed_days) + 1);
+  $('range').textContent = dayTime(w.start) + ' 重置，' + dayTime(w.end) + ' 再重置 · 第 ' + day + ' 天，共 7 天';
+  const elapsed = s.week_elapsed_days / 7 * 100, diff = w.estimate - elapsed;
+  const fullBeforeReset = w.eta_full && new Date(w.eta_full) < new Date(w.end);
+  const tail = fullBeforeReset ? ' · 预计 ' + dayTime(w.eta_full) + ' 用满' : ' · 重置前用不满';
+  const up = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l4-4 3 3 4-5"/><path d="M10 5h4v4"/></svg>';
+  const down = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 3-3 4 5"/><path d="M10 11h4V7"/></svg>';
+  const pace = $('pace');
+  if (diff > 1) { pace.className = 'badge warn'; pace.innerHTML = up + esc('比均匀用快 ' + Math.round(diff) + ' 个点' + tail); }
+  else if (diff < -1) { pace.className = 'badge ok'; pace.innerHTML = down + esc('比均匀用慢 ' + Math.round(-diff) + ' 个点' + tail); }
+  else { pace.className = 'badge calm'; pace.textContent = '节奏正好' + tail; }
+  $('updated').textContent = '实时 · ' + now.toLocaleTimeString('zh-CN', {hour12: false});
 }
 
-function hoursChart(rows) {
-  const box = $('hours');
-  box.textContent = '';
-  const W = box.clientWidth || 600, H = 220, ml = 44, mr = 16, mb = 22, mt = 8;
-  const keys = ['opus', 'sonnet', 'fable', 'haiku', 'other'];
-  const tot = rows.map((r) => keys.reduce((a, k) => a + r[k], 0));
-  const max = Math.max(1, ...tot);
-  const step = Math.pow(10, Math.floor(Math.log10(max)));
-  const top = Math.ceil(max / step) * step;
-  const y = (v) => H - mb - (v / top) * (H - mb - mt);
-  const bw = (W - ml - mr) / rows.length;
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', H);
-  const add = (tag, attrs, text) => { const n = document.createElementNS(ns, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; svg.appendChild(n); return n; };
-  [0, top / 2, top].forEach((t) => {
-    add('line', {x1: ml, x2: W - mr, y1: y(t), y2: y(t), stroke: 'var(--line)'});
-    add('text', {x: ml - 6, y: y(t) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)'}, '$' + Math.round(t).toLocaleString('en'));
-  });
-  rows.forEach((r, i) => {
-    let acc = 0;
-    keys.forEach((k) => {
-      if (!r[k]) return;
-      add('rect', {x: ml + i * bw + 1, width: Math.max(1, bw - 2), y: y(acc + r[k]), height: y(acc) - y(acc + r[k]), fill: `var(--${k})`});
-      acc += r[k];
-    });
-    const d = new Date(r.hour);
-    if (d.getHours() % 6 === 0) {
-      add('text', {x: ml + i * bw + bw / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)'},
-        d.getHours() === 0 ? (d.getMonth() + 1) + '/' + d.getDate() : d.getHours() + ':00');
-    }
-  });
-  box.appendChild(svg);
-  const tip = el('div', 'tip'); tip.hidden = true; box.appendChild(tip);
-  svg.addEventListener('mousemove', (ev) => {
-    const rect = svg.getBoundingClientRect();
-    const x = (ev.clientX - rect.left) * W / rect.width;
-    const i = Math.floor((x - ml) / bw);
-    if (i < 0 || i >= rows.length) { tip.hidden = true; return; }
-    const r = rows[i];
-    tip.textContent = '';
-    tip.appendChild(el('div', null, when(r.hour) + ' · ' + usd(tot[i])));
-    keys.filter((k) => r[k]).forEach((k) => {
-      const line = el('div'); const sw = el('i'); sw.style.background = `var(--${k})`;
-      line.append(sw, k + ' ' + usd(r[k])); tip.appendChild(line);
-    });
-    tip.hidden = false;
-    const px = ev.clientX - rect.left;
-    tip.style.left = Math.max(0, Math.min(rect.width - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
-    tip.style.top = '0px';
-  });
-  svg.addEventListener('mouseleave', () => { tip.hidden = true; });
+function kpis(s) {
+  const w = s.weekly, h = s.five_hour, elapsed = s.week_elapsed_days / 7 * 100;
+  const level = (v, ahead) => v >= 90 ? 'var(--danger)' : v >= 70 || ahead ? 'var(--warn-fill)' : 'var(--opus)';
+  const official = (m) => m.official == null ? '暂无官方读数' : '估算 · 官方 ' + pct0(m.official);
+  const items = [
+    {label: '每周额度', note: official(w), value: pct0(w.estimate), fill: w.estimate, official: w.official, color: level(w.estimate, w.estimate - elapsed > 1), tick: elapsed},
+    h.start
+      ? {label: '5 小时窗口', note: hm(new Date(h.start)) + ' – ' + hm(new Date(h.end)), value: pct0(h.estimate), fill: h.estimate, official: h.official, color: level(h.estimate, false)}
+      : {label: '5 小时窗口', note: '没有进行中的窗口', value: '0%', fill: 0, color: 'var(--opus)'},
+    {label: '本周花费', note: '日均配额 ' + usd(s.daily_budget), value: usd(s.week.total), fill: s.week.total / (w.dollars_per_pct * 100) * 100, color: 'var(--opus)'},
+    {label: '子代理占比', note: '最近 1 小时 ' + usd(s.burn_last_hour), value: s.week.total ? pct0(s.week.subagent / s.week.total * 100) : '-', fill: s.week.total ? s.week.subagent / s.week.total * 100 : 0, color: 'var(--muted)'},
+  ];
+  $('kpis').innerHTML = items.map((k) => `
+    <div class="kpi">
+      <div class="kpi-top"><span>${esc(k.label)}</span><span>${esc(k.note)}</span></div>
+      <div class="kpi-value mono">${esc(k.value)}</div>
+      <div class="track">
+        <div class="fill" style="width:${Math.min(100, k.fill)}%;background:${k.color}"></div>
+        ${k.official ? `<div class="official" style="width:${Math.min(100, k.official)}%"></div>` : ''}
+        ${k.tick != null ? `<div class="tick" style="left:${Math.min(100, k.tick)}%"></div>` : ''}
+      </div>
+    </div>`).join('');
 }
 
-function bars(id, rows, label, color) {
-  const box = $(id); box.textContent = '';
-  const total = rows.reduce((a, r) => a + r.cost, 0) || 1, max = Math.max(...rows.map((r) => r.cost), 1);
-  rows.slice(0, 8).forEach((r) => {
-    const b = el('div', 'bar'), row = el('div', 'row');
-    row.append(el('span', null, label(r.key)), el('span', null, usd(r.cost) + ' · ' + pct(r.cost / total) + ' · ' + r.calls.toLocaleString('en') + ' 次'));
-    const t = el('div', 't'), f = el('div', 'f');
-    f.style.width = (r.cost / max * 100) + '%'; f.style.background = color(r.key);
-    t.appendChild(f); b.append(row, t); box.appendChild(b);
-  });
-  if (!rows.length) box.appendChild(el('p', 'note', '本周期还没有调用'));
+function stackedBar(row, total) {
+  return FAMILIES.filter((f) => row[f] > 0).map((f) => `<div style="background:var(--${f});height:${row[f] / total * 100}%"></div>`).join('');
+}
+
+function chart(s) {
+  const rows = view === 'day' ? s.week_days : s.hours.slice(-48);
+  const present = FAMILIES.filter((f) => rows.some((r) => r[f] > 0));
+  $('chart-legend').innerHTML = (present.length ? present : ['opus']).map((f) => `<span><i class="sw" style="background:var(--${f})"></i>${FAMILY_NAME[f]}</span>`).join('');
+  if (view === 'day') {
+    const max = niceMax(Math.max(s.daily_budget * 1.15, ...s.week_days.map((d) => d.total)));
+    const y = (v) => (1 - v / max) * 100;
+    $('chart-caption').textContent = '本周每天，从重置时刻起算 24 小时 · ' + usd(s.week.total);
+    const cols = s.week_days.map((d) => {
+      const start = new Date(d.start);
+      if (d.state === 'future') return '<div class="col"><div class="future"></div></div>';
+      const parts = FAMILIES.filter((f) => d[f] > 0).map((f) => FAMILY_NAME[f] + ' ' + usd(d[f])).join(' · ');
+      return `<div class="col">
+        ${d.total > 0 ? `<div class="tip" style="bottom:calc(${d.total / max * 100}% + 8px)"><div class="strong">周${WEEKDAY[start.getDay()]} ${md(start)} · ${usd(d.total)}</div><div class="mono">${esc(parts)}</div></div>` : ''}
+        <div class="bar" style="height:${d.total / max * 100}%">${stackedBar(d, d.total)}</div>
+      </div>`;
+    }).join('');
+    const labels = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">周${WEEKDAY[new Date(d.start).getDay()]}</div>`).join('');
+    const yb = y(s.daily_budget);
+    // Axis marks that would overlap the budget label are left out.
+    const marks = [[0, axis(max)], [50, axis(max / 2)], [100, '$0']].filter(([top]) => Math.abs(top - yb) >= 9);
+    $('chart').innerHTML = `
+      <div class="plot-wrap">
+        <div class="plot days">
+          <div class="grid-line" style="top:50%"></div>
+          <div class="budget-line" style="top:${yb}%"></div>
+          ${cols}
+        </div>
+        <div class="xlabels">${labels}</div>
+      </div>
+      <div class="yaxis mono">
+        ${marks.map(([top, text]) => `<span style="top:${top}%">${text}</span>`).join('')}
+        <span class="strong" style="top:${yb}%">日均 ${axis(s.daily_budget)}</span>
+      </div>`;
+  } else {
+    const totals = rows.map((h) => FAMILIES.reduce((a, f) => a + h[f], 0));
+    const max = niceMax(Math.max(10, ...totals));
+    $('chart-caption').textContent = '最近 48 小时，每小时 · ' + usd(totals.reduce((a, b) => a + b, 0));
+    const cols = rows.map((h, i) => {
+      const t = new Date(h.hour);
+      return `<div class="col">
+        ${totals[i] > 0 ? `<div class="tip" style="bottom:calc(${totals[i] / max * 100}% + 8px)"><div class="strong">周${WEEKDAY[t.getDay()]} ${hm(t)} · ${usd(totals[i])}</div></div>` : ''}
+        <div class="bar" style="height:${totals[i] / max * 100}%">${stackedBar(h, totals[i])}</div>
+      </div>`;
+    }).join('');
+    const ticks = [0, 12, 24, 36].filter((i) => rows[i]).map((i) => { const t = new Date(rows[i].hour); return '<div>周' + WEEKDAY[t.getDay()] + ' ' + hm(t) + '</div>'; }).join('') + '<div>现在</div>';
+    $('chart').innerHTML = `
+      <div class="plot-wrap">
+        <div class="plot hours"><div class="grid-line" style="top:50%"></div>${cols}</div>
+        <div class="xlabels spread mono">${ticks}</div>
+      </div>
+      <div class="yaxis mono">
+        <span style="top:0">${axis(max)}</span>
+        <span style="top:50%">${axis(max / 2)}</span>
+        <span style="top:100%">$0</span>
+      </div>`;
+  }
+}
+
+function breakdown(s) {
+  const total = s.week.total || 1;
+  $('efforts').innerHTML = s.week.by_effort.map((e) => {
+    const [who, level] = e.key.split(' · ');
+    const hot = level === 'xhigh' || level === 'max';
+    const share = e.cost / total * 100;
+    return `<div class="effort">
+      <span class="muted">${who === 'sub' ? '子代理' : '主会话'} <span class="strong" style="color:var(--text)">${esc(level)}</span></span>
+      <div class="meter"><div style="width:${share}%;background:${hot ? 'var(--warn-fill)' : 'var(--muted)'}"></div></div>
+      <span class="mono right">${usd(e.cost)}</span>
+      <span class="mono right muted">${share.toFixed(1)}%</span>
+    </div>`;
+  }).join('') || '<div class="empty">本周还没有调用。</div>';
+  $('model-stack').innerHTML = s.week.by_model.map((m) => `<div style="width:${m.cost / total * 100}%;background:var(--${family(m.key)})"></div>`).join('');
+  $('models').innerHTML = s.week.by_model.map((m) => `
+    <div class="model">
+      <i class="sw" style="background:var(--${family(m.key)})"></i>
+      <span class="strong">${esc(modelName(m.key))}</span>
+      <span class="mono muted">${m.calls.toLocaleString('en')} 次</span>
+      <span class="mono" style="margin-left:auto">${usd(m.cost)}</span>
+      <span class="mono muted right" style="width:48px">${(m.cost / total * 100).toFixed(1)}%</span>
+    </div>`).join('');
+}
+
+const LIVE_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="运行中"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--warn-fill)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="var(--warn-fill)"/></svg>';
+const DONE_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="已结束"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--faint)" stroke-width="1.5"/><path d="M4.6 7.2l1.6 1.6 3.2-3.3" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function agents(s) {
+  const now = new Date(s.now);
+  const list = s.agents;
+  const shown = showAllAgents ? list : list.slice(0, Math.max(12, s.active_agents));
+  $('agents-caption').textContent = s.active_agents + ' 个正在运行 · 本周 ' + list.length + (list.length >= 60 ? '+' : '') + ' 个';
+  $('nav-agents').textContent = s.active_agents || '';
+  $('agent-rows').innerHTML = `<div class="row agent header"><span></span><span>任务</span><span>模型</span><span class="right">调用</span><span class="right">上下文</span><span class="right">API 等价</span><span class="right">最后活动</span></div>` +
+    (shown.map((a) => `
+    <div class="row agent" title="${esc(a.session_title)}">
+      ${a.active ? LIVE_ICON : DONE_ICON}
+      <span class="ellipsis strong">${esc(a.description)}</span>
+      <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
+      <span class="mono right muted">${a.calls}</span>
+      <span class="mono right muted">${compact(a.context)}</span>
+      <span class="mono right">${usd(a.cost)}</span>
+      <span class="right muted">${ago(a.last, now)}</span>
+    </div>`).join('') || '<div class="empty">本周还没有子代理。</div>');
+  const more = $('agents-more');
+  more.hidden = list.length <= shown.length && !showAllAgents;
+  more.textContent = showAllAgents ? '收起' : '显示全部 ' + list.length + ' 个';
+}
+
+function sessions(s) {
+  const now = new Date(s.now);
+  $('nav-sessions').textContent = s.sessions.length || '';
+  $('session-rows').innerHTML = `<div class="row session header"><span>会话</span><span>项目</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>` +
+    (s.sessions.map((x) => `
+    <div class="row session">
+      <span class="ellipsis strong">${esc(x.title)}</span>
+      <span class="ellipsis muted">${esc(x.project)}</span>
+      <span class="mono right muted">${x.agents}</span>
+      <span class="mono right muted">${usd(x.main)}</span>
+      <span class="mono right">${usd(x.total)}</span>
+      <span class="right muted">${ago(x.last, now)}</span>
+    </div>`).join('') || '<div class="empty">本周还没有会话。</div>');
+}
+
+function weeks(s) {
+  const first = s.weeks.findIndex((x) => x.total > 0 || x.official_peak != null);
+  const list = s.weeks.slice(Math.max(0, first)).reverse();
+  $('nav-weeks').textContent = list.length || '';
+  $('week-rows').innerHTML = `<div class="row week header"><span>额度周期</span><span class="right">API 等价</span><span class="right">子代理</span><span class="right">Sonnet</span><span>官方最高读数</span></div>` +
+    list.map((w, i) => {
+      // The current week uses the live totals; the history is cached for a minute.
+      const cur = i === 0, total = cur ? s.week.total : w.total;
+      const sub = cur ? s.week.subagent : w.subagent;
+      const sonnet = cur ? s.week.by_model.filter((m) => family(m.key) === 'sonnet').reduce((a, m) => a + m.cost, 0) : w.sonnet;
+      const share = (v) => total ? pct0(v / total * 100) : '-';
+      const peak = w.official_peak;
+      return `<div class="row week">
+        <span class="strong">${md(new Date(w.start))} – ${md(new Date(w.end))}${cur ? ' <span class="muted" style="font-weight:400">本周</span>' : ''}</span>
+        <span class="mono right">${axis(total)}</span>
+        <span class="mono right muted">${share(sub)}</span>
+        <span class="mono right muted">${share(sonnet)}</span>
+        <span class="peak"><span class="meter"><div style="width:${peak ?? 0}%;background:${peak >= 90 ? 'var(--danger)' : 'var(--opus)'}"></div></span><span class="mono muted right" style="width:40px">${peak == null ? '-' : peak + '%'}</span></span>
+      </div>`;
+    }).join('');
+}
+
+function method(s) {
+  const src = (m) => m.rate_source === 'fallback' ? '默认值' : '本周期校准';
+  $('method').textContent = '估算 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额。现在每周 1% ≈ ' + usd(s.weekly.dollars_per_pct) + '（' + src(s.weekly) + '），5 小时 1% ≈ ' + usd(s.five_hour.dollars_per_pct) + '（' + src(s.five_hour) + '）。';
 }
 
 function render(s) {
-  $('tier').textContent = s.tier || '未知档位';
-  meter('w', $('m-week'), s.weekly, s.weekly.end);
-  $('w-since').textContent = usd(s.weekly.spend_since_official);
-  $('w-reset').textContent = when(s.weekly.end);
-  meter('h', $('m-five'), s.five_hour, s.five_hour.end);
-  $('h-window').textContent = s.five_hour.start ? when(s.five_hour.start) + ' 至 ' + when(s.five_hour.end) : '当前没有进行中的窗口';
-  $('k-burn').textContent = usd(s.burn_last_hour);
-  $('k-today').textContent = usd(s.today);
-  $('k-week').textContent = usd(s.week.total);
-  $('k-sub').textContent = s.week.total ? pct(s.week.subagent / s.week.total) : '-';
-  $('k-active').textContent = s.active_agents;
-  hoursChart(s.hours);
-  weekly(s);
-  bars('by-model', s.week.by_model, short, (k) => `var(--${fam(k)})`);
-  bars('by-effort', s.week.by_effort, (k) => k.replace('sub', '子代理').replace('main', '主会话'),
-    (k) => k.endsWith('max') ? 'var(--bad)' : k.endsWith('xhigh') ? 'var(--warn)' : 'var(--other)');
-
-  const at = $('agents'); at.textContent = '';
-  s.agents.forEach((a) => {
-    const tr = el('tr');
-    tr.append(el('td', a.active ? 'on' : null, a.active ? '●' : ''));
-    const d = el('td', 'desc', a.description); d.title = a.session_title; tr.appendChild(d);
-    const m = el('td'); m.appendChild(el('span', 'pill ' + fam(a.model), short(a.model))); tr.appendChild(m);
-    const e = el('td'); e.appendChild(el('span', 'pill ' + a.effort, a.effort)); tr.appendChild(e);
-    tr.append(el('td', 'n', a.calls.toLocaleString('en')), el('td', 'n', compact(a.context)), el('td', 'n', usd(a.cost)), el('td', 'n', ago(a.last)));
-    at.appendChild(tr);
-  });
-  if (!s.agents.length) { const tr = el('tr'); const td = el('td', 'note', '本周期还没有子代理'); td.colSpan = 8; tr.appendChild(td); at.appendChild(tr); }
-
-  const st = $('sessions'); st.textContent = '';
-  s.sessions.forEach((x) => {
-    const tr = el('tr');
-    tr.append(el('td', null, x.title), el('td', null, x.project), el('td', 'n', x.agents), el('td', 'n', usd(x.main)), el('td', 'n', usd(x.sub)), el('td', 'n', usd(x.total)));
-    st.appendChild(tr);
-  });
+  header(s); kpis(s); chart(s); breakdown(s); agents(s); sessions(s); weeks(s); method(s);
+  markSection();
 }
 
-const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-const dayLabel = (iso) => { const d = new Date(iso); return WEEKDAY[d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate(); };
-const timeLabel = (iso) => new Date(iso).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
-
-function weekly(s) {
-  const w = s.weekly;
-  $('wk-range').textContent = '本周：' + dayLabel(w.start) + ' ' + timeLabel(w.start) + ' 至 ' + dayLabel(w.end) + ' ' + timeLabel(w.end) +
-    ' · 第 ' + Math.min(7, Math.floor(s.week_elapsed_days) + 1) + ' 天，共 7 天';
-  const timePct = Math.min(100, s.week_elapsed_days / 7 * 100);
-  const pace = $('wk-pace'); pace.textContent = '';
-  const item = (label, value, cls) => { const sp = el('span', null, label); const b = el('b', cls, value); sp.appendChild(b); pace.appendChild(sp); };
-  item('额度已用 ', w.estimate.toFixed(0) + '%', null);
-  item('时间已过 ', timePct.toFixed(0) + '%', null);
-  const diff = w.estimate - timePct;
-  item('', Math.abs(diff) < 3 ? '节奏正好' : diff > 0 ? '比均匀用快 ' + diff.toFixed(0) + ' 个百分点' : '比均匀用慢 ' + (-diff).toFixed(0) + ' 个百分点',
-    Math.abs(diff) < 3 ? null : diff > 0 ? 'ahead' : 'behind');
-  item('日均配额 ', usd(s.daily_budget), null);
-
-  const box = $('wk-days'); box.textContent = '';
-  const rows = s.week_days, keys = ['opus', 'sonnet', 'fable', 'haiku', 'other'];
-  const W = box.clientWidth || 600, H = 220, ml = 52, mr = 16, mb = 22, mt = 12;
-  const top0 = Math.max(s.daily_budget * 1.15, ...rows.map((r) => r.total), 1);
-  const step = Math.pow(10, Math.floor(Math.log10(top0))) / 2;
-  const top = Math.ceil(top0 / step) * step;
-  const y = (v) => H - mb - (v / top) * (H - mb - mt);
-  const bw = (W - ml - mr) / 7;
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', '100%'); svg.setAttribute('height', H);
-  const add = (tag, attrs, text) => { const n = document.createElementNS(ns, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; svg.appendChild(n); return n; };
-  [0, top / 2, top].forEach((t) => {
-    add('line', {x1: ml, x2: W - mr, y1: y(t), y2: y(t), stroke: 'var(--line)'});
-    add('text', {x: ml - 6, y: y(t) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)'}, '$' + Math.round(t).toLocaleString('en'));
-  });
-  rows.forEach((r, i) => {
-    const x = ml + i * bw + bw * 0.2, w = bw * 0.6;
-    if (r.state === 'future') {
-      add('rect', {x, width: w, y: y(top * 0.02), height: y(0) - y(top * 0.02), rx: 2, fill: 'var(--track)'});
-    }
-    let acc = 0;
-    keys.forEach((k) => {
-      if (!r[k]) return;
-      add('rect', {x, width: w, y: y(acc + r[k]), height: y(acc) - y(acc + r[k]), fill: `var(--${k})`, opacity: r.state === 'current' ? 1 : 0.85});
-      acc += r[k];
-    });
-    if (r.total) add('text', {x: x + w / 2, y: y(r.total) - 4, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--fg)'}, usd(r.total));
-    add('text', {x: x + w / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 11, fill: r.state === 'current' ? 'var(--fg)' : 'var(--muted)',
-      'font-weight': r.state === 'current' ? 600 : 400}, dayLabel(r.start));
-  });
-  add('line', {x1: ml, x2: W - mr, y1: y(s.daily_budget), y2: y(s.daily_budget), stroke: 'var(--muted)', 'stroke-dasharray': '4 3'});
-  add('text', {x: W - mr, y: y(s.daily_budget) - 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)'}, '日均配额 ' + usd(s.daily_budget));
-  box.appendChild(svg);
-
-  const tb = $('weeks'); tb.textContent = '';
-  const firstWithData = s.weeks.findIndex((x) => x.total > 0 || x.official_peak != null);
-  s.weeks.slice(Math.max(0, firstWithData)).reverse().forEach((w, i) => {
-    const x = i === 0 ? {...w, total: s.week.total, subagent: s.week.subagent, sonnet: s.week.by_model.filter((m) => fam(m.key) === 'sonnet').reduce((a, m) => a + m.cost, 0)} : w;
-    const tr = el('tr');
-    const label = (new Date(x.start).getMonth() + 1) + '/' + new Date(x.start).getDate() + ' 至 ' + (new Date(x.end).getMonth() + 1) + '/' + new Date(x.end).getDate();
-    tr.append(el('td', i === 0 ? 'on' : null, label + (i === 0 ? '（本周）' : '')), el('td', 'n', '$' + Math.round(x.total).toLocaleString('en')),
-      el('td', 'n', x.total ? pct(x.subagent / x.total) : '-'), el('td', 'n', x.total ? pct(x.sonnet / x.total) : '-'),
-      el('td', 'n', x.official_peak == null ? '-' : x.official_peak + '%'));
-    tb.appendChild(tr);
-  });
+// The sidebar marks the section in the middle of the screen, or the last one at the bottom of the page.
+const navLinks = [...document.querySelectorAll('.nav')];
+const SECTIONS = ['overview', 'agents', 'sessions', 'weeks'];
+function markSection() {
+  const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+  const middle = innerHeight / 2;
+  const id = atBottom ? SECTIONS[SECTIONS.length - 1]
+    : SECTIONS.filter((x) => $(x).getBoundingClientRect().top <= middle).pop() || SECTIONS[0];
+  navLinks.forEach((a) => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + id)));
 }
+addEventListener('scroll', markSection, {passive: true});
+addEventListener('resize', markSection);
 
 let last = null;
 async function tick() {
@@ -389,15 +566,13 @@ async function tick() {
     last = await r.json();
     render(last);
     $('dot').classList.remove('stale');
-    $('updated').textContent = '更新于 ' + new Date().toLocaleTimeString('zh-CN') + (last.last_call ? ' · 最近一次调用 ' + ago(last.last_call) : '');
   } catch (e) {
     $('dot').classList.add('stale');
-    $('updated').textContent = '连不上监控程序，正在重试';
+    $('updated').textContent = '连接断开，正在重试';
   }
 }
 tick();
 setInterval(tick, 5000);
-window.addEventListener('resize', () => { if (last) { hoursChart(last.hours); weekly(last); } });
 </script>
 </body>
 </html>
