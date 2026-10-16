@@ -76,6 +76,16 @@ class MeterTest(unittest.TestCase):
         start, end = monitor.five_hour_bounds(times, T0 + timedelta(hours=7))
         self.assertEqual(start, T0 + timedelta(hours=6))
 
+    def test_subagents_count_by_kind_and_by_the_day_they_started(self):
+        def agent(model, effort, hours, active=False):
+            return {"model": model, "effort": effort, "first": monitor.iso(T0 + timedelta(hours=hours)), "active": active}
+        counts = monitor.agent_counts([
+            agent("claude-opus-5-5", "xhigh", 1), agent("claude-opus-5-5", "xhigh", 30, active=True),
+            agent("claude-sonnet-5-5", "high", 2), agent("claude-opus-5-5", "xhigh", -3),
+        ], T0)
+        self.assertEqual((counts["total"], counts["active"], counts["per_day"]), (4, 1, [3, 1, 0, 0, 0, 0, 0]))
+        self.assertEqual(counts["by_kind"][0], {"family": "opus", "effort": "xhigh", "count": 3})
+
 
 if __name__ == "__main__":
     unittest.main()

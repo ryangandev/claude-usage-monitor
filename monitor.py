@@ -336,6 +336,18 @@ def week_days(calls, w_start, now):
     return days
 
 
+def agent_counts(agents, w_start):
+    """How many subagents ran this week, by model and effort, and how many started on each of its seven days."""
+    kinds, per_day = {}, [0] * 7
+    for a in agents:
+        k = (family(a["model"]), a["effort"])
+        kinds[k] = kinds.get(k, 0) + 1
+        day = int((parse_ts(a["first"]) - w_start) / timedelta(days=1))
+        per_day[min(max(day, 0), 6)] += 1
+    return {"total": len(agents), "active": sum(1 for a in agents if a["active"]), "per_day": per_day,
+            "by_kind": [{"family": f, "effort": e, "count": n} for (f, e), n in sorted(kinds.items(), key=lambda kv: -kv[1])]}
+
+
 def build_state(store, cfg, now=None):
     now = now or datetime.now(timezone.utc)
     with store.lock:
@@ -458,11 +470,12 @@ def build_state(store, cfg, now=None):
                  "by_model": bucket(week, lambda c: c["model"]),
                  "by_effort": bucket(week, lambda c: ("sub" if c["agent"] else "main") + " · " + effort_of(c))},
         "hours": hours,
-        "agents": agent_list[:60],
+        "agents": agent_list[:300],
         "active_agents": sum(1 for a in agent_list if a["active"]),
         "sessions": session_list[:20],
         "last_call": calls[-1]["ts"] if calls else None,
         "week_days": week_days(week, w_start, now),
+        "agent_counts": agent_counts(agent_list, w_start),
         "week_elapsed_days": round((now - w_start) / timedelta(days=1), 2),
         "daily_budget": round(w_rate * 100 / 7, 2),
         "weeks": weekly_history(store, cfg, samples, now),
