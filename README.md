@@ -32,9 +32,9 @@ It is an unofficial tool, not made by or affiliated with Anthropic.
   </tr>
 </table>
 
-The same numbers are on a web page at http://127.0.0.1:8765, in Chinese only for now:
+The same numbers are on a web page at http://127.0.0.1:8765, in English or Chinese:
 
-![The web page: this week's quota, spend and subagents, and the week's cumulative use with the last hour's and the week's average projections](docs/images/web-zh.jpg)
+![The web page: this week's quota, spend and subagents, and the week's cumulative use with the last hour's and the week's average projections](docs/images/web.jpg)
 
 The screenshots use made-up session and project names.
 

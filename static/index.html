@@ -205,22 +205,29 @@ footer p { margin: 0; }
   <aside>
     <div class="brand">
       <div class="logo"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9h3l2-5 2 8 2-3h3"/></svg></div>
-      <span>Claude 用量</span>
+      <span data-en="Claude Usage">Claude 用量</span>
       <span class="tier" id="tier">-</span>
     </div>
-    <nav aria-label="页面">
-      <a class="nav" href="#overview" aria-current="true"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5H9z"/></svg><span>概览</span></a>
-      <a class="nav" href="#agents"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM3 13.5c.6-2.4 2.6-4 5-4s4.4 1.6 5 4"/></svg><span>子代理</span><span class="count mono" id="nav-agents"></span></a>
-      <a class="nav" href="#sessions"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg><span>会话</span><span class="count mono" id="nav-sessions"></span></a>
-      <a class="nav" href="#weeks"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg><span>往周</span><span class="count mono" id="nav-weeks"></span></a>
+    <nav aria-label="页面" data-en-label="Pages">
+      <a class="nav" href="#overview" aria-current="true"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5H9z"/></svg><span data-en="Overview">概览</span></a>
+      <a class="nav" href="#agents"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM3 13.5c.6-2.4 2.6-4 5-4s4.4 1.6 5 4"/></svg><span data-en="Subagents">子代理</span><span class="count mono" id="nav-agents"></span></a>
+      <a class="nav" href="#sessions"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg><span data-en="Sessions">会话</span><span class="count mono" id="nav-sessions"></span></a>
+      <a class="nav" href="#weeks"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg><span data-en="Past weeks">往周</span><span class="count mono" id="nav-weeks"></span></a>
     </nav>
     <div class="appearance">
-      <span class="label" id="appearance-label">外观</span>
+      <span class="label" id="appearance-label" data-en="Appearance">外观</span>
       <div class="seg" role="radiogroup" aria-labelledby="appearance-label" id="theme">
         <div class="thumb" style="width: calc((100% - 4px) / 3)"></div>
-        <button role="radio" data-value="system"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-11zM6 13.5h4M8 10.5v3"/></svg>系统</button>
-        <button role="radio" data-value="light"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>浅色</button>
-        <button role="radio" data-value="dark"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z"/></svg>深色</button>
+        <button role="radio" data-value="system"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-11zM6 13.5h4M8 10.5v3"/></svg><span data-en="System">系统</span></button>
+        <button role="radio" data-value="light"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg><span data-en="Light">浅色</span></button>
+        <button role="radio" data-value="dark"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z"/></svg><span data-en="Dark">深色</span></button>
+      </div>
+      <span class="label" id="language-label" data-en="Language">语言</span>
+      <div class="seg" role="radiogroup" aria-labelledby="language-label" id="language">
+        <div class="thumb" style="width: calc((100% - 4px) / 3)"></div>
+        <button role="radio" data-value="system"><span data-en="System">系统</span></button>
+        <button role="radio" data-value="zh">中文</button>
+        <button role="radio" data-value="en">English</button>
       </div>
     </div>
   </aside>
@@ -228,17 +235,17 @@ footer p { margin: 0; }
   <main>
     <div class="panel">
       <div class="topbar">
-        <span class="muted">用量</span>
+        <span class="muted" data-en="Usage">用量</span>
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
-        <span class="strong">本周</span>
-        <span class="live"><span class="dot" id="dot"></span><span id="updated">连接中</span></span>
+        <span class="strong" data-en="This week">本周</span>
+        <span class="live"><span class="dot" id="dot"></span><span id="updated">-</span></span>
       </div>
 
       <div class="content">
         <section id="overview">
           <div class="head">
             <div>
-              <h1>本周</h1>
+              <h1 data-en="This week">本周</h1>
               <div class="sub" id="range">-</div>
             </div>
             <span class="badge calm" id="pace"></span>
@@ -249,14 +256,14 @@ footer p { margin: 0; }
 
         <section>
           <div class="section-head">
-            <div class="title"><h2>消耗</h2><span class="muted" id="chart-caption"></span></div>
+            <div class="title"><h2 data-en="Usage">消耗</h2><span class="muted" id="chart-caption"></span></div>
             <div class="legend">
               <span id="chart-legend" class="legend"></span>
-              <div class="seg small three" role="radiogroup" aria-label="图表范围" id="range-seg">
+              <div class="seg small three" role="radiogroup" aria-label="图表范围" data-en-label="Chart range" id="range-seg">
                 <div class="thumb" style="width: calc((100% - 4px) / 3)"></div>
-                <button role="radio" data-value="curve">累计</button>
-                <button role="radio" data-value="day">每天</button>
-                <button role="radio" data-value="hour">每小时</button>
+                <button role="radio" data-value="curve" data-en="Cumulative">累计</button>
+                <button role="radio" data-value="day" data-en="Daily">每天</button>
+                <button role="radio" data-value="hour" data-en="Hourly">每小时</button>
               </div>
             </div>
           </div>
@@ -265,19 +272,19 @@ footer p { margin: 0; }
 
         <div class="split">
           <section>
-            <div class="section-head"><h2>按 effort</h2></div>
+            <div class="section-head"><h2 data-en="By effort">按 effort</h2></div>
             <div id="efforts"></div>
-            <div class="note">橙色是 xhigh 和 max。</div>
+            <div class="note" data-en="Orange is xhigh and max.">橙色是 xhigh 和 max。</div>
           </section>
           <section>
-            <div class="section-head"><h2>按模型</h2></div>
+            <div class="section-head"><h2 data-en="By model">按模型</h2></div>
             <div class="stack" id="model-stack"></div>
             <div id="models"></div>
           </section>
         </div>
 
         <section id="agents">
-          <div class="section-head"><div class="title"><h2>子代理</h2><span class="muted" id="agents-caption"></span></div></div>
+          <div class="section-head"><div class="title"><h2 data-en="Subagents">子代理</h2><span class="muted" id="agents-caption"></span></div></div>
           <div class="kinds" id="agent-kinds"></div>
           <div class="table"><div class="rows" id="agent-rows"></div></div>
           <button class="more" id="agents-more" hidden></button>
@@ -285,11 +292,11 @@ footer p { margin: 0; }
 
         <section id="sessions">
           <div class="section-head">
-            <div class="title"><h2>会话</h2><span class="muted" id="sessions-caption"></span></div>
-            <div class="seg small" role="radiogroup" aria-label="分组" id="group-seg">
+            <div class="title"><h2 data-en="Sessions">会话</h2><span class="muted" id="sessions-caption"></span></div>
+            <div class="seg small" role="radiogroup" aria-label="分组" data-en-label="Group by" id="group-seg">
               <div class="thumb" style="width: calc(50% - 2px)"></div>
-              <button role="radio" data-value="session">会话</button>
-              <button role="radio" data-value="project">项目</button>
+              <button role="radio" data-value="session" data-en="Session">会话</button>
+              <button role="radio" data-value="project" data-en="Project">项目</button>
             </div>
           </div>
           <div class="table"><div class="rows" id="session-rows"></div></div>
@@ -297,15 +304,15 @@ footer p { margin: 0; }
         </section>
 
         <section id="weeks">
-          <div class="section-head"><h2>往周</h2></div>
+          <div class="section-head"><h2 data-en="Past weeks">往周</h2></div>
           <div class="table"><div class="rows" style="min-width: 620px" id="week-rows"></div></div>
-          <div class="note" id="weeks-note">10/14 之前删掉的会话没有记录，那几周金额偏低。官方最高读数和花费对不上的周显示“-”。</div>
+          <div class="note" id="weeks-note" data-en="Sessions deleted before 10/14 left no record, so those weeks read low. A week whose official peak does not match its spend shows &quot;-&quot;.">10/14 之前删掉的会话没有记录，那几周金额偏低。官方最高读数和花费对不上的周显示“-”。</div>
         </section>
 
         <footer>
-          <p>金额是 API 等价：把每次调用的 token 按 API 标价折算，用来衡量用量，订阅不按它收费。</p>
+          <p data-en="Amounts are API-equivalent: each call's tokens priced at API list prices, as a measure of use. A subscription is not billed by it.">金额是 API 等价：把每次调用的 token 按 API 标价折算，用来衡量用量，订阅不按它收费。</p>
           <p id="method"></p>
-          <p>只统计这台电脑上的 Claude Code。数据存进本地数据库，之后删掉会话也不会丢。</p>
+          <p data-en="Counts Claude Code on this Mac only. Everything goes into a local database, so deleting a session later loses nothing.">只统计这台电脑上的 Claude Code。数据存进本地数据库，之后删掉会话也不会丢。</p>
         </footer>
       </div>
     </div>
@@ -319,23 +326,31 @@ const usd = (v) => '$' + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString('en'
 const pct0 = (v) => Math.round(v) + '%';
 const axis = (v) => '$' + Math.round(v).toLocaleString('en');
 const compact = (v) => Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(v);
-const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
+// Language: system, Chinese or English, remembered in this browser. "System" follows the browser.
+let langSetting = 'system';
+try { langSetting = localStorage.getItem('lang') || 'system'; } catch (e) {}
+let lang = 'zh';
+const L = (zh, en) => lang === 'en' ? en : zh;
+const WEEKDAY = {zh: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'], en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']};
+const wd = (d) => WEEKDAY[lang][d.getDay()];
 const md = (d) => (d.getMonth() + 1) + '/' + d.getDate();
-const hm = (d) => d.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', hour12: false});
-const dayTime = (s) => { const d = new Date(s); return '周' + WEEKDAY[d.getDay()] + ' ' + md(d) + ' ' + hm(d); };
+const hm = (d) => lang === 'en'
+  ? d.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'})
+  : d.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', hour12: false});
+const dayTime = (s) => { const d = new Date(s); return wd(d) + ' ' + md(d) + ' ' + hm(d); };
 const FAMILIES = ['opus', 'sonnet', 'fable', 'haiku', 'other'];
-const FAMILY_NAME = {opus: 'Opus', sonnet: 'Sonnet', fable: 'Fable', haiku: 'Haiku', other: '其他'};
+const FAMILY_NAME = {opus: 'Opus', sonnet: 'Sonnet', fable: 'Fable', haiku: 'Haiku', other: 'Other'};
 const family = (m) => FAMILIES.find((f) => m.includes(f)) || 'other';
 const modelName = (m) => {
   const f = family(m);
   const v = m.match(new RegExp(f + '-(\\d+)(?:-(\\d{1,2}))?(?!\\d)'));
-  return FAMILY_NAME[f] + (v ? ' ' + v[1] + (v[2] ? '.' + v[2] : '') : '');
+  return (f === 'other' ? L('其他', 'Other') : FAMILY_NAME[f]) + (v ? ' ' + v[1] + (v[2] ? '.' + v[2] : '') : '');
 };
 const ago = (s, now) => {
   const min = (now - new Date(s)) / 60000;
-  if (min < 1) return '刚刚';
-  if (min < 60) return Math.floor(min) + ' 分钟前';
-  if (min < 48 * 60) return Math.floor(min / 60) + ' 小时前';
+  if (min < 1) return L('刚刚', 'just now');
+  if (min < 60) return Math.floor(min) + L(' 分钟前', ' min ago');
+  if (min < 48 * 60) return Math.floor(min / 60) + L(' 小时前', ' h ago');
   return md(new Date(s));
 };
 const niceMax = (v) => {
@@ -373,6 +388,29 @@ function setTheme(value, save) {
 $('theme').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.value, true); });
 setTheme(document.documentElement.dataset.theme, false);
 
+function applyLanguage() {
+  lang = langSetting === 'system' ? (/^zh/i.test(navigator.language) ? 'zh' : 'en') : langSetting;
+  document.documentElement.lang = L('zh-CN', 'en');
+  document.title = L('Claude 用量', 'Claude Usage');
+  document.querySelectorAll('[data-en]').forEach((el) => {
+    if (el.dataset.zh == null) el.dataset.zh = el.textContent;
+    el.textContent = L(el.dataset.zh, el.dataset.en);
+  });
+  document.querySelectorAll('[data-en-label]').forEach((el) => {
+    if (el.dataset.zhLabel == null) el.dataset.zhLabel = el.getAttribute('aria-label');
+    el.setAttribute('aria-label', L(el.dataset.zhLabel, el.dataset.enLabel));
+  });
+  segment($('language'), langSetting);
+}
+$('language').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  langSetting = b.dataset.value;
+  try { localStorage.setItem('lang', langSetting); } catch (e) {}
+  applyLanguage();
+  if (last) render(last);
+});
+applyLanguage();
+
 let view = 'curve';
 try { view = localStorage.getItem('chart') || 'curve'; } catch (e) {}
 segment($('range-seg'), view);
@@ -403,34 +441,35 @@ function header(s) {
   const tier = s.tier.match(/max_(\d+x)/);
   $('tier').textContent = tier ? 'Max ' + tier[1] : s.tier.replace(/^default_claude_/, '');
   const day = Math.min(7, Math.floor(s.week_elapsed_days) + 1);
-  $('range').textContent = dayTime(w.start) + ' 重置，' + dayTime(w.end) + ' 再重置 · 第 ' + day + ' 天，共 7 天';
+  $('range').textContent = L(dayTime(w.start) + ' 重置，' + dayTime(w.end) + ' 再重置 · 第 ' + day + ' 天，共 7 天',
+    'Reset ' + dayTime(w.start) + ', resets ' + dayTime(w.end) + ' · day ' + day + ' of 7');
   const elapsed = s.week_elapsed_days / 7 * 100, diff = w.estimate - elapsed;
   const u = derive(s);
-  const tail = w.estimate >= 100 ? ' · 已用满'
-    : u.runsOut ? ' · 按现在的速度 ' + dayTime(u.runsOut) + ' 用满'
-    : w.forecast_at_reset != null ? ' · 按本周平均，重置时约 ' + pct0(w.forecast_at_reset)
+  const tail = w.estimate >= 100 ? L(' · 已用满', ' · full')
+    : u.runsOut ? L(' · 按现在的速度 ' + dayTime(u.runsOut) + ' 用满', ' · at this pace, full by ' + dayTime(u.runsOut))
+    : w.forecast_at_reset != null ? L(' · 按本周平均，重置时约 ', " · ~") + pct0(w.forecast_at_reset) + L('', " at reset at the week's average")
     : '';
   const up = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l4-4 3 3 4-5"/><path d="M10 5h4v4"/></svg>';
   const down = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 3-3 4 5"/><path d="M10 11h4V7"/></svg>';
   const pace = $('pace');
-  if (u.runsOut || diff > 1) { pace.className = 'badge warn'; pace.innerHTML = up + esc((diff > 1 ? '比均匀用快 ' + Math.round(diff) + ' 个点' : '节奏正好') + tail); }
-  else if (diff < -1) { pace.className = 'badge ok'; pace.innerHTML = down + esc('比均匀用慢 ' + Math.round(-diff) + ' 个点' + tail); }
-  else { pace.className = 'badge calm'; pace.textContent = '节奏正好' + tail; }
-  $('updated').textContent = '实时 · ' + now.toLocaleTimeString('zh-CN', {hour12: false});
+  if (u.runsOut || diff > 1) { pace.className = 'badge warn'; pace.innerHTML = up + esc((diff > 1 ? L('比均匀用快 ' + Math.round(diff) + ' 个点', Math.round(diff) + ' points ahead of an even pace') : L('节奏正好', 'On pace')) + tail); }
+  else if (diff < -1) { pace.className = 'badge ok'; pace.innerHTML = down + esc(L('比均匀用慢 ' + Math.round(-diff) + ' 个点', Math.round(-diff) + ' points behind an even pace') + tail); }
+  else { pace.className = 'badge calm'; pace.textContent = L('节奏正好', 'On pace') + tail; }
+  $('updated').textContent = L('实时 · ', 'Live · ') + now.toLocaleTimeString(L('zh-CN', 'en-US'), {hour12: lang === 'en'});
 }
 
 function kpis(s) {
   const w = s.weekly, h = s.five_hour, elapsed = s.week_elapsed_days / 7 * 100, u = derive(s);
   const level = (v, ahead) => v >= 90 ? 'var(--danger)' : v >= 70 || ahead ? 'var(--warn-fill)' : 'var(--opus)';
-  const official = (m) => m.official == null ? '暂无官方读数' : '估算 · 官方 ' + pct0(m.official);
+  const official = (m) => m.official == null ? L('暂无官方读数', 'No official reading yet') : L('估算 · 官方 ', 'Estimate · official ') + pct0(m.official);
   const items = [
-    {label: '每周额度', note: official(w), value: pct0(w.estimate), fill: w.estimate, official: w.official, color: level(w.estimate, w.estimate - elapsed > 1), tick: elapsed},
+    {label: L('每周额度', 'Weekly quota'), note: official(w), value: pct0(w.estimate), fill: w.estimate, official: w.official, color: level(w.estimate, w.estimate - elapsed > 1), tick: elapsed},
     h.start
-      ? {label: '5 小时窗口', note: hm(new Date(h.start)) + ' – ' + hm(new Date(h.end)), value: pct0(h.estimate), fill: h.estimate, official: h.official, color: level(h.estimate, false)}
-      : {label: '5 小时窗口', note: '没有进行中的窗口', value: '0%', fill: 0, color: 'var(--opus)'},
-    {label: '本周花费', note: '日均配额 ' + usd(s.daily_budget), value: usd(s.week.total), fill: u.pct(s.week.total), color: 'var(--opus)'},
+      ? {label: L('5 小时窗口', '5-hour window'), note: hm(new Date(h.start)) + ' – ' + hm(new Date(h.end)), value: pct0(h.estimate), fill: h.estimate, official: h.official, color: level(h.estimate, false)}
+      : {label: L('5 小时窗口', '5-hour window'), note: L('没有进行中的窗口', 'No open window'), value: '0%', fill: 0, color: 'var(--opus)'},
+    {label: L('本周花费', 'Spent this week'), note: L('日均配额 ', 'Daily budget ') + usd(s.daily_budget), value: usd(s.week.total), fill: u.pct(s.week.total), color: 'var(--opus)'},
     agentKpi(s),
-    {label: '子代理占比', note: '最近 1 小时 ' + usd(s.burn_last_hour) + ' · ' + u.burn.toFixed(1) + '%', value: s.week.total ? pct0(s.week.subagent / s.week.total * 100) : '-', fill: s.week.total ? s.week.subagent / s.week.total * 100 : 0, color: 'var(--muted)'},
+    {label: L('子代理占比', 'Subagent share'), note: L('最近 1 小时 ', 'Last hour ') + usd(s.burn_last_hour) + ' · ' + u.burn.toFixed(1) + '%', value: s.week.total ? pct0(s.week.subagent / s.week.total * 100) : '-', fill: s.week.total ? s.week.subagent / s.week.total * 100 : 0, color: 'var(--muted)'},
   ];
   $('kpis').innerHTML = items.map((k) => `
     <div class="kpi">
@@ -449,7 +488,7 @@ function agentKpi(s) {
   const c = s.agent_counts, today = s.week_days.findIndex((d) => d.state === 'current');
   const byFamily = FAMILIES.map((f) => [f, c.by_kind.filter((k) => k.family === f).reduce((a, k) => a + k.count, 0)]).filter(([, n]) => n);
   return {
-    label: '子代理数量', note: '运行中 ' + c.active + ' · 今天 ' + (today >= 0 ? c.per_day[today] : 0),
+    label: L('子代理数量', 'Subagents'), note: L('运行中 ', 'Running ') + c.active + L(' · 今天 ', ' · today ') + (today >= 0 ? c.per_day[today] : 0),
     value: c.total.toLocaleString('en'),
     stack: byFamily.map(([f, n]) => `<div title="${FAMILY_NAME[f]} ${n}" style="flex:${n} 1 0;background:var(--${f})"></div>`).join(''),
   };
@@ -470,15 +509,15 @@ function curve(s) {
   const fast = u.burn > 0 ? (u.runsOut ? [u.runsOut, 100] : [t1, w.estimate + u.burn * (t1 - now) / 3600000]) : null;
   const seg = (a, b, stroke, dash, width) => `<line x1="${a[0] * 10}" y1="${a[1] * 2}" x2="${b[0] * 10}" y2="${b[1] * 2}" stroke="${stroke}" stroke-width="${width}" stroke-dasharray="${dash}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
   $('chart-legend').innerHTML = [
-    ['var(--opus)', 'solid', '实际'],
-    ...(fast ? [['var(--warn-fill)', 'dashed', '按最近 1 小时']] : []),
-    ...(w.forecast_at_reset != null ? [['var(--muted)', 'dotted', '按本周平均']] : []),
-    ['var(--faint)', 'dashed', '时间进度'],
+    ['var(--opus)', 'solid', L('实际', 'Actual')],
+    ...(fast ? [['var(--warn-fill)', 'dashed', L('按最近 1 小时', "At last hour's pace")]] : []),
+    ...(w.forecast_at_reset != null ? [['var(--muted)', 'dotted', L('按本周平均', "At the week's average")]] : []),
+    ['var(--faint)', 'dashed', L('时间进度', 'Time')],
   ].map(([c, st, t]) => `<span><i class="ln" style="border-top-color:${c};border-top-style:${st}"></i>${t}</span>`).join('');
-  $('chart-caption').textContent = '从重置起累计，占每周额度';
-  const days = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">周${WEEKDAY[new Date(d.start).getDay()]}</div>`).join('');
+  $('chart-caption').textContent = L('从重置起累计，占每周额度', 'Since the reset, in percent of the weekly quota');
+  const days = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">${wd(new Date(d.start))}</div>`).join('');
   const full = u.runsOut ? `<div class="pt" style="left:${x(u.runsOut)}%;top:0;background:var(--warn-fill)"></div>
-    <div class="label end" style="left:${x(u.runsOut)}%;top:0">${esc(dayTime(u.runsOut))} 用满</div>` : '';
+    <div class="label end" style="left:${x(u.runsOut)}%;top:0">${esc(L(dayTime(u.runsOut) + ' 用满', 'Full ' + dayTime(u.runsOut)))}</div>` : '';
   $('chart').innerHTML = `
     <div class="plot-wrap">
       <div class="curve" style="border-bottom:1px solid var(--border)">
@@ -492,7 +531,7 @@ function curve(s) {
         </svg>
         ${full}
         <div class="pt" style="left:${nx}%;top:${ny}%;background:var(--opus)"></div>
-        <div class="label mono${nx > 88 ? ' edge' : ''}" style="left:${nx}%;top:${ny}%">现在 ${pct0(w.estimate)}</div>
+        <div class="label mono${nx > 88 ? ' edge' : ''}" style="left:${nx}%;top:${ny}%">${L('现在', 'Now')} ${pct0(w.estimate)}</div>
       </div>
       <div class="xlabels" style="gap:0">${days}</div>
     </div>
@@ -509,17 +548,17 @@ function chart(s) {
   if (view === 'day') {
     const max = niceMax(Math.max(s.daily_budget * 1.15, ...s.week_days.map((d) => d.total)));
     const y = (v) => (1 - v / max) * 100;
-    $('chart-caption').textContent = '本周每天，从重置时刻起算 24 小时 · ' + usd(s.week.total);
+    $('chart-caption').textContent = L('本周每天，从重置时刻起算 24 小时 · ', 'Each day of the week, 24 hours from the reset · ') + usd(s.week.total);
     const cols = s.week_days.map((d, i) => {
       const start = new Date(d.start), started = s.agent_counts.per_day[i];
       if (d.state === 'future') return '<div class="col"><div class="future"></div></div>';
       const parts = FAMILIES.filter((f) => d[f] > 0).map((f) => FAMILY_NAME[f] + ' ' + usd(d[f])).join(' · ');
       return `<div class="col">
-        ${d.total > 0 ? `<div class="tip" style="bottom:calc(${d.total / max * 100}% + 8px)"><div class="strong">周${WEEKDAY[start.getDay()]} ${md(start)} · ${usd(d.total)}</div><div class="mono">${esc(parts)}</div>${started ? `<div>新开子代理 ${started} 个</div>` : ''}</div>` : ''}
+        ${d.total > 0 ? `<div class="tip" style="bottom:calc(${d.total / max * 100}% + 8px)"><div class="strong">${wd(start)} ${md(start)} · ${usd(d.total)}</div><div class="mono">${esc(parts)}</div>${started ? `<div>${L('新开子代理 ' + started + ' 个', started + (started > 1 ? ' subagents started' : ' subagent started'))}</div>` : ''}</div>` : ''}
         <div class="bar" style="height:${d.total / max * 100}%">${stackedBar(d, d.total)}</div>
       </div>`;
     }).join('');
-    const labels = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">周${WEEKDAY[new Date(d.start).getDay()]}</div>`).join('');
+    const labels = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">${wd(new Date(d.start))}</div>`).join('');
     const yb = y(s.daily_budget);
     // Axis marks that would overlap the budget label are left out.
     const marks = [[0, axis(max)], [50, axis(max / 2)], [100, '$0']].filter(([top]) => Math.abs(top - yb) >= 9);
@@ -534,20 +573,20 @@ function chart(s) {
       </div>
       <div class="yaxis mono">
         ${marks.map(([top, text]) => `<span style="top:${top}%">${text}</span>`).join('')}
-        <span class="strong" style="top:${yb}%">日均 ${axis(s.daily_budget)}</span>
+        <span class="strong" style="top:${yb}%">${L('日均', 'Daily')} ${axis(s.daily_budget)}</span>
       </div>`;
   } else {
     const totals = rows.map((h) => FAMILIES.reduce((a, f) => a + h[f], 0));
     const max = niceMax(Math.max(10, ...totals));
-    $('chart-caption').textContent = '最近 48 小时，每小时 · ' + usd(totals.reduce((a, b) => a + b, 0));
+    $('chart-caption').textContent = L('最近 48 小时，每小时 · ', 'Last 48 hours, by hour · ') + usd(totals.reduce((a, b) => a + b, 0));
     const cols = rows.map((h, i) => {
       const t = new Date(h.hour);
       return `<div class="col">
-        ${totals[i] > 0 ? `<div class="tip" style="bottom:calc(${totals[i] / max * 100}% + 8px)"><div class="strong">周${WEEKDAY[t.getDay()]} ${hm(t)} · ${usd(totals[i])}</div></div>` : ''}
+        ${totals[i] > 0 ? `<div class="tip" style="bottom:calc(${totals[i] / max * 100}% + 8px)"><div class="strong">${wd(t)} ${hm(t)} · ${usd(totals[i])}</div></div>` : ''}
         <div class="bar" style="height:${totals[i] / max * 100}%">${stackedBar(h, totals[i])}</div>
       </div>`;
     }).join('');
-    const ticks = [0, 12, 24, 36].filter((i) => rows[i]).map((i) => { const t = new Date(rows[i].hour); return '<div>周' + WEEKDAY[t.getDay()] + ' ' + hm(t) + '</div>'; }).join('') + '<div>现在</div>';
+    const ticks = [0, 12, 24, 36].filter((i) => rows[i]).map((i) => { const t = new Date(rows[i].hour); return '<div>' + wd(t) + ' ' + hm(t) + '</div>'; }).join('') + '<div>' + L('现在', 'Now') + '</div>';
     $('chart').innerHTML = `
       <div class="plot-wrap">
         <div class="plot hours"><div class="grid-line" style="top:50%"></div>${cols}</div>
@@ -568,54 +607,54 @@ function breakdown(s) {
     const hot = level === 'xhigh' || level === 'max';
     const share = e.cost / total * 100;
     return `<div class="effort">
-      <span class="muted">${who === 'sub' ? '子代理' : '主会话'} <span class="strong" style="color:var(--text)">${esc(level)}</span></span>
+      <span class="muted">${who === 'sub' ? L('子代理', 'Subagent') : L('主会话', 'Main')} <span class="strong" style="color:var(--text)">${esc(level)}</span></span>
       <div class="meter"><div style="width:${share}%;background:${hot ? 'var(--warn-fill)' : 'var(--muted)'}"></div></div>
       <span class="mono right">${usd(e.cost)}</span>
       <span class="mono right muted">${share.toFixed(1)}%</span>
     </div>`;
-  }).join('') || '<div class="empty">本周还没有调用。</div>';
+  }).join('') || '<div class="empty">' + L('本周还没有调用。', 'No calls this week yet.') + '</div>';
   $('model-stack').innerHTML = s.week.by_model.map((m) => `<div style="width:${m.cost / total * 100}%;background:var(--${family(m.key)})"></div>`).join('');
   $('models').innerHTML = s.week.by_model.map((m) => `
     <div class="model">
       <i class="sw" style="background:var(--${family(m.key)})"></i>
       <span class="strong">${esc(modelName(m.key))}</span>
-      <span class="mono muted">${m.calls.toLocaleString('en')} 次</span>
+      <span class="mono muted">${m.calls.toLocaleString('en')}${L(' 次', ' calls')}</span>
       <span class="mono" style="margin-left:auto">${usd(m.cost)}</span>
       <span class="mono muted right" style="width:48px">${(m.cost / total * 100).toFixed(1)}%</span>
     </div>`).join('');
 }
 
-const LIVE_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="运行中"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--warn-fill)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="var(--warn-fill)"/></svg>';
-const DONE_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="已结束"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--faint)" stroke-width="1.5"/><path d="M4.6 7.2l1.6 1.6 3.2-3.3" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const LIVE_ICON = () => '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="' + L('运行中', 'Running') + '"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--warn-fill)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="var(--warn-fill)"/></svg>';
+const DONE_ICON = () => '<svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="' + L('已结束', 'Finished') + '"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--faint)" stroke-width="1.5"/><path d="M4.6 7.2l1.6 1.6 3.2-3.3" fill="none" stroke="var(--faint)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function agents(s) {
   const now = new Date(s.now);
   const list = s.agents;
   const shown = showAllAgents ? list : list.slice(0, Math.max(12, s.active_agents));
   const c = s.agent_counts;
-  $('agents-caption').textContent = '本周 ' + c.total + ' 个 · ' + c.active + ' 个正在运行';
-  $('agent-kinds').innerHTML = c.by_kind.map((k) => `<span class="chip"><i style="background:var(--${k.family})"></i>${FAMILY_NAME[k.family]}<span class="muted">${esc(k.effort)}</span><span class="mono">${k.count}</span>${k.median_cost > 0 ? `<span class="mono muted">· 中位 ${usd(k.median_cost)}</span>` : ''}</span>`).join('');
+  $('agents-caption').textContent = L('本周 ' + c.total + ' 个 · ' + c.active + ' 个正在运行', c.total + ' this week · ' + c.active + ' running');
+  $('agent-kinds').innerHTML = c.by_kind.map((k) => `<span class="chip"><i style="background:var(--${k.family})"></i>${FAMILY_NAME[k.family]}<span class="muted">${esc(k.effort)}</span><span class="mono">${k.count}</span>${k.median_cost > 0 ? `<span class="mono muted">· ${L('中位', 'median')} ${usd(k.median_cost)}</span>` : ''}</span>`).join('');
   $('nav-agents').textContent = s.active_agents || '';
-  $('agent-rows').innerHTML = `<div class="row agent header"><span></span><span>任务</span><span>模型</span><span class="right">调用</span><span class="right">上下文</span><span class="right">API 等价</span><span class="right">最后活动</span></div>` +
+  $('agent-rows').innerHTML = `<div class="row agent header"><span></span><span>${L('任务', 'Task')}</span><span>${L('模型', 'Model')}</span><span class="right">${L('调用', 'Calls')}</span><span class="right">${L('上下文', 'Context')}</span><span class="right">${L('API 等价', 'API equiv.')}</span><span class="right">${L('最后活动', 'Last')}</span></div>` +
     (shown.map((a) => `
     <div class="row agent" title="${esc(a.session_title)}">
-      ${a.active ? LIVE_ICON : DONE_ICON}
+      ${a.active ? LIVE_ICON() : DONE_ICON()}
       <span class="ellipsis strong">${esc(a.description)}</span>
       <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
       <span class="mono right muted">${a.calls}</span>
       <span class="mono right muted">${compact(a.context)}</span>
       <span class="mono right">${usd(a.cost)}</span>
       <span class="right muted">${ago(a.last, now)}</span>
-    </div>`).join('') || '<div class="empty">本周还没有子代理。</div>');
+    </div>`).join('') || '<div class="empty">' + L('本周还没有子代理。', 'No subagents this week yet.') + '</div>');
   const more = $('agents-more');
   more.hidden = list.length <= shown.length && !showAllAgents;
-  more.textContent = showAllAgents ? '收起' : '显示全部 ' + list.length + ' 个';
+  more.textContent = showAllAgents ? L('收起', 'Show fewer') : L('显示全部 ' + list.length + ' 个', 'Show all ' + list.length);
 }
 
 function sessions(s) {
   const now = new Date(s.now), u = derive(s);
-  const dot = (on) => on ? '<span class="live-dot" title="最近 10 分钟有动静"></span>' : '<span></span>';
-  const running = (n) => n ? ` <span class="muted" style="font-weight:400">· ${n} 个子代理运行中</span>` : '';
+  const dot = (on) => on ? `<span class="live-dot" title="${L('最近 10 分钟有动静', 'Active in the last 10 minutes')}"></span>` : '<span></span>';
+  const running = (n) => n ? ` <span class="muted" style="font-weight:400">· ${L(n + ' 个子代理运行中', n + ' subagent' + (n > 1 ? 's' : '') + ' running')}</span>` : '';
   const live = u.sessions.filter(u.isActive).length;
   $('nav-sessions').textContent = u.sessions.length || '';
   let rows, head, count;
@@ -626,8 +665,8 @@ function sessions(s) {
     const projects = [...byName].map(([name, list]) => ({name, list, active: list.some(u.isActive), total: sum(list, 'total')}))
       .sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.total - a.total);
     count = projects.length;
-    $('sessions-caption').textContent = '本周 ' + count + ' 个项目 · 有绿点的最近 10 分钟有动静';
-    head = `<div class="row project header"><span></span><span>项目</span><span class="right">会话</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>`;
+    $('sessions-caption').textContent = L('本周 ' + count + ' 个项目 · 有绿点的最近 10 分钟有动静', count + ' projects this week · a green dot means activity in the last 10 minutes');
+    head = `<div class="row project header"><span></span><span>${L('项目', 'Project')}</span><span class="right">${L('会话', 'Sessions')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">${L('主会话', 'Main')}</span><span class="right">${L('合计', 'Total')}</span><span class="right">${L('最后活动', 'Last')}</span></div>`;
     rows = projects.map((p) => `
     <div class="row project">
       ${dot(p.active)}
@@ -640,8 +679,8 @@ function sessions(s) {
     </div>`);
   } else {
     count = u.sessions.length;
-    $('sessions-caption').textContent = '本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前';
-    head = `<div class="row session header"><span></span><span>会话</span><span>项目</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>`;
+    $('sessions-caption').textContent = L('本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前', count + ' this week · ' + live + ' active, listed first');
+    head = `<div class="row session header"><span></span><span>${L('会话', 'Session')}</span><span>${L('项目', 'Project')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">${L('主会话', 'Main')}</span><span class="right">${L('合计', 'Total')}</span><span class="right">${L('最后活动', 'Last')}</span></div>`;
     rows = u.sessions.map((x) => `
     <div class="row session">
       ${dot(u.isActive(x))}
@@ -654,17 +693,17 @@ function sessions(s) {
     </div>`);
   }
   const shown = showAllSessions ? rows : rows.slice(0, 20);
-  $('session-rows').innerHTML = head + (shown.join('') || '<div class="empty">本周还没有会话。</div>');
+  $('session-rows').innerHTML = head + (shown.join('') || '<div class="empty">' + L('本周还没有会话。', 'No sessions this week yet.') + '</div>');
   const more = $('sessions-more');
   more.hidden = rows.length <= 20;
-  more.textContent = showAllSessions ? '收起' : '显示全部 ' + rows.length + ' 个';
+  more.textContent = showAllSessions ? L('收起', 'Show fewer') : L('显示全部 ' + rows.length + ' 个', 'Show all ' + rows.length);
 }
 
 function weeks(s) {
   const first = s.weeks.findIndex((x) => x.total > 0 || x.official_peak != null);
   const list = s.weeks.slice(Math.max(0, first)).reverse();
   $('nav-weeks').textContent = list.length || '';
-  $('week-rows').innerHTML = `<div class="row week header"><span>额度周期</span><span class="right">API 等价</span><span class="right">子代理</span><span class="right">Sonnet</span><span>官方最高读数</span></div>` +
+  $('week-rows').innerHTML = `<div class="row week header"><span>${L('额度周期', 'Window')}</span><span class="right">${L('API 等价', 'API equiv.')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">Sonnet</span><span>${L('官方最高读数', 'Official peak')}</span></div>` +
     list.map((w, i) => {
       // The current week uses the live totals; the history is cached for a minute.
       const cur = i === 0, total = cur ? s.week.total : w.total;
@@ -673,7 +712,7 @@ function weeks(s) {
       const share = (v) => total ? pct0(v / total * 100) : '-';
       const peak = (w.official_peak_trusted ?? true) ? w.official_peak : null;
       return `<div class="row week">
-        <span class="strong">${md(new Date(w.start))} – ${md(new Date(w.end))}${cur ? ' <span class="muted" style="font-weight:400">本周</span>' : ''}</span>
+        <span class="strong">${md(new Date(w.start))} – ${md(new Date(w.end))}${cur ? ` <span class="muted" style="font-weight:400">${L('本周', 'this week')}</span>` : ''}</span>
         <span class="mono right">${axis(total)}</span>
         <span class="mono right muted">${share(sub)}</span>
         <span class="mono right muted">${share(sonnet)}</span>
@@ -683,9 +722,13 @@ function weeks(s) {
 }
 
 function method(s) {
-  const src = (m) => m.rate_source === 'calibrated' ? '按 ' + Math.round(m.calibration_pct) + ' 个点的官方读数校准' : '默认值，还没校准';
-  $('method').textContent = '估算 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额：每周 ' + usd(s.weekly.dollars_per_pct) + '（' + src(s.weekly) + '），5 小时 ' + usd(s.five_hour.dollars_per_pct) + '（' + src(s.five_hour) + '）。'
-    + (s.weekly.effective_dollars_per_pct ? '本周的花费按 ' + usd(s.weekly.effective_dollars_per_pct) + ' = 1% 折算，加起来正好是估算。' : '');
+  const src = (m) => m.rate_source === 'calibrated' ? L('按 ' + Math.round(m.calibration_pct) + ' 个点的官方读数校准', 'calibrated on ' + Math.round(m.calibration_pct) + ' points of official readings') : L('默认值，还没校准', 'default, not calibrated yet');
+  const w = s.weekly, h = s.five_hour;
+  $('method').textContent = L(
+    '估算 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额：每周 ' + usd(w.dollars_per_pct) + '（' + src(w) + '），5 小时 ' + usd(h.dollars_per_pct) + '（' + src(h) + '）。'
+      + (w.effective_dollars_per_pct ? '本周的花费按 ' + usd(w.effective_dollars_per_pct) + ' = 1% 折算，加起来正好是估算。' : ''),
+    'Estimate = the last official reading + spend since ÷ dollars per 1%: weekly ' + usd(w.dollars_per_pct) + ' (' + src(w) + '), 5-hour ' + usd(h.dollars_per_pct) + ' (' + src(h) + ').'
+      + (w.effective_dollars_per_pct ? " This week's spend is shared out at " + usd(w.effective_dollars_per_pct) + ' = 1%, which adds up to the estimate.' : ''));
 }
 
 function render(s) {
@@ -715,7 +758,7 @@ async function tick() {
     $('dot').classList.remove('stale');
   } catch (e) {
     $('dot').classList.add('stale');
-    $('updated').textContent = '连接断开，正在重试';
+    $('updated').textContent = L('连接断开，正在重试', 'Disconnected, retrying');
   }
 }
 tick();

@@ -25,6 +25,7 @@ A localhost dashboard of Claude Code usage: `monitor.py` (scanner, estimates, HT
 - Never write to anything under `~/.claude` or the Claude app's folder; the only state is `state.db`, next to `monitor.py` or, for the app, in `~/Library/Application Support/Claude Usage/`.
 - Bump `API_VERSION` in `monitor.py` when the state's shape changes, so the app stops reusing an older server.
 - A field the app shows is shown on the page too, worked out the same way: the page's `derive` mirrors the app's `Usage`.
+- The page and the app are in Chinese and English: text in the page's markup carries its English in `data-en`, and text in its script goes through `L(zh, en)`, as the app's does.
 - The only write endpoint is `POST /api/reading`, and it requires the `X-Claude-Usage: 1` header so a web page cannot call it.
 - Update docs/README.md in the same commit as a change to how a number is computed.
 - The repository is public: screenshots in `docs/images/` must show made-up session, project and task names, never real ones.
