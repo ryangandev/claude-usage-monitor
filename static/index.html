@@ -92,9 +92,8 @@ h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.
 
 .kpis { display: flex; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .kpi { flex: 1 1 176px; min-width: 0; padding: 16px 18px; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); display: flex; flex-direction: column; gap: 10px; }
-.kpi-top { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
-.kpi-top span:first-child { white-space: nowrap; }
-.kpi-top span:last-child { font-size: 12px; text-align: right; }
+.kpi-top { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-note { font-size: 12px; color: var(--muted); }
 .kpi-value { font-size: 26px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
 .track { position: relative; height: 4px; border-radius: 2px; background: var(--active); }
 .track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
@@ -435,13 +434,14 @@ function kpis(s) {
   ];
   $('kpis').innerHTML = items.map((k) => `
     <div class="kpi">
-      <div class="kpi-top"><span>${esc(k.label)}</span><span>${esc(k.note)}</span></div>
+      <div class="kpi-top">${esc(k.label)}</div>
       <div class="kpi-value mono">${esc(k.value)}</div>
       <div class="track">
         ${k.stack ? `<div class="track-stack">${k.stack}</div>` : `<div class="fill" style="width:${Math.min(100, k.fill)}%;background:${k.color}"></div>`}
         ${k.official ? `<div class="official" style="width:${Math.min(100, k.official)}%"></div>` : ''}
         ${k.tick != null ? `<div class="tick" style="left:${Math.min(100, k.tick)}%"></div>` : ''}
       </div>
+      <div class="kpi-note">${esc(k.note)}</div>
     </div>`).join('');
 }
 

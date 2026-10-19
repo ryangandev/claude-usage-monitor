@@ -8,6 +8,10 @@
   See how much of your Claude weekly limit you have used, whether it will last until the reset, and which sessions and subagents are spending it.
 </p>
 
+<p align="center">
+  English · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 A local, live dashboard of Claude Code usage on a Mac.
 It tails Claude Code's transcripts into a SQLite store, reads the Claude app's sampled plan-usage meter, and serves a page at http://127.0.0.1:8765 that refreshes every 5 seconds.
 A native menu bar app runs it for you and shows the same numbers.
@@ -16,7 +20,7 @@ Everything stays on your Mac: it reads local files, binds to 127.0.0.1 only, and
 It is an unofficial tool, not made by or affiliated with Anthropic.
 
 <p align="center">
-  <img src="docs/images/popover.jpg" width="400" alt="The menu bar item and its popover: weekly quota at 39% and on track, the 5-hour window, and daily use">
+  <img src="docs/images/popover.jpg" width="400" alt="The menu bar item and its popover: weekly quota at 40% and on track, the 5-hour window, and daily use">
 </p>
 
 ![The dashboard's overview: weekly quota with a forecast at the reset, time left at the current pace, the 5-hour window, and this week's cumulative use against time](docs/images/overview.jpg)
@@ -27,6 +31,10 @@ It is an unofficial tool, not made by or affiliated with Anthropic.
     <td><img src="docs/images/subagents.jpg" alt="Subagents by model and effort, with the median quota one costs, and every subagent this week"></td>
   </tr>
 </table>
+
+The same numbers are on a web page at http://127.0.0.1:8765, in Chinese only for now:
+
+![The web page: this week's quota, spend and subagents, and the week's cumulative use with the last hour's and the week's average projections](docs/images/web-zh.jpg)
 
 The screenshots use made-up session and project names.
 
@@ -59,8 +67,8 @@ Standard library only; Python 3.10 or later.
 
 - Weekly and 5-hour limits: the app's last official reading, plus an estimate for spend since then, and when the current pace would reach 100%.
 - Spend in the last hour, today and this limit window, and the share spent by subagents.
-- Hourly spend for 48 hours by model family, and this window's spend by model and by effort.
-- Every subagent this window, active ones first, with model, effort, calls, current context size and spend.
+- This week's cumulative use against time, with where the last hour's pace and the week's average would take it, daily and hourly spend by model family, and this window's spend by model and by effort.
+- Every subagent this window, active ones first, with model, effort, calls, current context size and spend, and the median a subagent of each model and effort costs.
 - Every session this week, active ones first, alone or grouped by project, and the last eight weeks side by side.
 
 A weekly reading copied from claude.ai by hand ("Enter official reading" in the app) counts like one the Claude app sampled.

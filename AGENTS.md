@@ -28,3 +28,4 @@ A localhost dashboard of Claude Code usage: `monitor.py` (scanner, estimates, HT
 - The only write endpoint is `POST /api/reading`, and it requires the `X-Claude-Usage: 1` header so a web page cannot call it.
 - Update docs/README.md in the same commit as a change to how a number is computed.
 - The repository is public: screenshots in `docs/images/` must show made-up session, project and task names, never real ones.
+- README.md and README.zh-CN.md say the same things; change both together. Each has its own screenshots, English ones and `-zh` ones, taken from the same made-up state.
