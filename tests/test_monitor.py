@@ -64,6 +64,32 @@ class ScanTest(unittest.TestCase):
         self.assertEqual(projects, [monitor.project_name("-Users-x-proj")])
         self.assertEqual(self.store.db.execute("SELECT count(*) FROM files").fetchone()[0], 1)
 
+    def subagent(self, session, meta):
+        folder = self.projects / "-Users-x-proj" / session / "subagents"
+        folder.mkdir(parents=True)
+        (folder / "agent-a1.jsonl").write_text(assistant("m9", "r9", "2026-10-14T15:00:00Z"))
+        if meta:
+            (folder / "agent-a1.meta.json").write_text(json.dumps({"description": "Write migration", "agentType": "general-purpose", "effort": "xhigh"}))
+
+    def description(self):
+        return self.store.db.execute("SELECT description, effort FROM agents WHERE agent = 'a1'").fetchone()
+
+    def test_a_subagent_copied_into_a_resumed_session_keeps_its_description(self):
+        # The copy carries no meta file, and can be read before or after the original.
+        self.subagent("original", meta=True)
+        monitor.scan_once(self.store, self.cfg, self.projects)
+        self.subagent("resumed", meta=False)
+        monitor.scan_once(self.store, self.cfg, self.projects)
+        self.assertEqual(self.description(), ("Write migration", "xhigh"))
+
+        self.store = monitor.Store(":memory:")
+        (self.projects / "-Users-x-proj" / "original" / "subagents" / "agent-a1.meta.json").rename(self.projects / "meta.json")
+        monitor.scan_once(self.store, self.cfg, self.projects)
+        self.assertEqual(self.description(), (None, None))
+        (self.projects / "meta.json").rename(self.projects / "-Users-x-proj" / "original" / "subagents" / "agent-a1.meta.json")
+        monitor.fill_missing_agent_meta(self.store, self.projects)
+        self.assertEqual(self.description(), ("Write migration", "xhigh"))
+
 
 class MeterTest(unittest.TestCase):
     def test_estimate_adds_spend_since_the_last_official_reading(self):

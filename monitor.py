@@ -140,15 +140,38 @@ def parse_line(line, path, projects, cfg):
 
 
 def read_agent_meta(store, path, agent, session):
+    """Record a subagent's description, type, effort and model from the meta file beside its transcript.
+
+    A resumed or forked session gets copies of its subagents' transcripts without their meta files,
+    so a field the copy lacks keeps what another copy already recorded.
+    """
     meta_path = path[: -len(".jsonl")] + ".meta.json"
     try:
         meta = json.loads(Path(meta_path).read_text())
     except (OSError, ValueError):
         meta = {}
     store.db.execute(
-        "INSERT OR REPLACE INTO agents VALUES (?,?,?,?,?,?)",
+        """INSERT INTO agents VALUES (?,?,?,?,?,?) ON CONFLICT(agent) DO UPDATE SET
+             session = coalesce(agents.session, excluded.session),
+             description = coalesce(excluded.description, agents.description),
+             agent_type = coalesce(excluded.agent_type, agents.agent_type),
+             effort = coalesce(excluded.effort, agents.effort),
+             model = coalesce(excluded.model, agents.model)""",
         (agent, session, meta.get("description"), meta.get("agentType"), meta.get("effort"), meta.get("model")),
     )
+
+
+def fill_missing_agent_meta(store, projects=PROJECTS):
+    """Fill the descriptions an older version lost when a copied transcript overwrote them."""
+    missing = {a for (a,) in store.db.execute("SELECT agent FROM agents WHERE description IS NULL")}
+    if not missing:
+        return
+    with store.lock:
+        for meta_path in glob.glob(str(projects / "*" / "*" / "subagents" / "agent-*.meta.json")):
+            agent = Path(meta_path).name[len("agent-"):-len(".meta.json")]
+            if agent in missing:
+                read_agent_meta(store, meta_path[: -len(".meta.json")] + ".jsonl", agent, None)
+        store.db.commit()
 
 
 def scan_once(store, cfg, projects=PROJECTS):
@@ -164,6 +187,7 @@ def scan_once(store, cfg, projects=PROJECTS):
             ino, off = known.get(path, (None, 0))
             if ino != st.st_ino or st.st_size < off:
                 off = 0
+            first_read = off == 0
             if st.st_size == off:
                 continue
             rows = []
@@ -182,7 +206,7 @@ def scan_once(store, cfg, projects=PROJECTS):
                 )
                 lines += len(rows)
                 agent = rows[0][6]
-                if agent and agent not in known_agents(store):
+                if agent and (first_read or agent not in known_agents(store)):
                     read_agent_meta(store, path, agent, rows[0][5])
             store.db.execute(
                 "INSERT OR REPLACE INTO files VALUES (?,?,?)", (path, st.st_ino, off)
@@ -609,6 +633,7 @@ def main():
     store = Store(cfg["db_path"])
     t0 = time.time()
     n = scan_once(store, cfg)
+    fill_missing_agent_meta(store)
     print(f"initial scan: {n} usage lines in {time.time() - t0:.1f}s", flush=True)
     if args.once:
         s = build_state(store, cfg)
