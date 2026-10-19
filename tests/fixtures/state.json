@@ -16,18 +16,25 @@
     "effort": "xhigh",
     "family": "opus",
     "median_cost": 24.08
+   },
+   {
+    "cost": 0.01,
+    "count": 1,
+    "effort": "n/a",
+    "family": "haiku",
+    "median_cost": 0.01
    }
   ],
   "per_day": [
    0,
    0,
    1,
-   0,
+   1,
    1,
    0,
    0
   ],
-  "total": 2
+  "total": 3
  },
  "agents": [
   {
@@ -57,6 +64,20 @@
    "model": "claude-opus-5-5",
    "session": "s1",
    "session_title": "Refactor billing service"
+  },
+  {
+   "active": false,
+   "agent": "a3",
+   "calls": 1,
+   "context": 52010,
+   "cost": 0.01,
+   "description": null,
+   "effort": "n/a",
+   "first": "2026-10-17T15:00:00Z",
+   "last": "2026-10-17T15:00:00Z",
+   "model": "claude-haiku-5-5",
+   "session": "s1",
+   "session_title": "Refactor billing service"
   }
  ],
  "all_sessions": [
@@ -74,15 +95,15 @@
   },
   {
    "active": true,
-   "agents": 2,
+   "agents": 3,
    "last": "2026-10-18T21:22:00Z",
    "main": 44.22,
    "project": "acme-web",
    "running": 1,
    "session": "s1",
-   "sub": 31.66,
+   "sub": 31.67,
    "title": "Refactor billing service",
-   "total": 75.88
+   "total": 75.89
   },
   {
    "active": false,
@@ -251,7 +272,7 @@
   },
   {
    "fable": 0.0,
-   "haiku": 0.0,
+   "haiku": 0.011,
    "hour": "2026-10-17T15:00:00Z",
    "opus": 0.0,
    "other": 0.0,
@@ -515,15 +536,15 @@
   },
   {
    "active": true,
-   "agents": 2,
+   "agents": 3,
    "last": "2026-10-18T21:22:00Z",
    "main": 44.22,
    "project": "acme-web",
    "running": 1,
    "session": "s1",
-   "sub": 31.66,
+   "sub": 31.67,
    "title": "Refactor billing service",
-   "total": 75.88
+   "total": 75.89
   },
   {
    "active": false,
@@ -559,6 +580,12 @@
     "cost": 7.58,
     "key": "sub · high",
     "output_tokens": 750000
+   },
+   {
+    "calls": 1,
+    "cost": 0.01,
+    "key": "sub · n/a",
+    "output_tokens": 20000
    }
   ],
   "by_model": [
@@ -573,11 +600,17 @@
     "cost": 13.62,
     "key": "claude-sonnet-5-5",
     "output_tokens": 1350000
+   },
+   {
+    "calls": 1,
+    "cost": 0.01,
+    "key": "claude-haiku-5-5",
+    "output_tokens": 20000
    }
   ],
-  "calls": 34,
-  "subagent": 31.66,
-  "total": 170.14
+  "calls": 35,
+  "subagent": 31.67,
+  "total": 170.15
  },
  "week_curve": [
   {
@@ -797,27 +830,27 @@
    "t": "2026-10-16T20:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-16T21:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-16T22:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-16T23:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-17T00:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-17T01:00:00Z"
   },
   {
-   "pct": 9.92,
+   "pct": 9.91,
    "t": "2026-10-17T02:00:00Z"
   },
   {
@@ -857,19 +890,19 @@
    "t": "2026-10-17T11:00:00Z"
   },
   {
-   "pct": 11.39,
+   "pct": 11.38,
    "t": "2026-10-17T12:00:00Z"
   },
   {
-   "pct": 11.39,
+   "pct": 11.38,
    "t": "2026-10-17T13:00:00Z"
   },
   {
-   "pct": 11.39,
+   "pct": 11.38,
    "t": "2026-10-17T14:00:00Z"
   },
   {
-   "pct": 11.39,
+   "pct": 11.38,
    "t": "2026-10-17T15:00:00Z"
   },
   {
@@ -929,39 +962,39 @@
    "t": "2026-10-18T05:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T06:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T07:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T08:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T09:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T10:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T11:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T12:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T13:00:00Z"
   },
   {
-   "pct": 12.85,
+   "pct": 12.86,
    "t": "2026-10-18T14:00:00Z"
   },
   {
@@ -1034,13 +1067,13 @@
   {
    "end": "2026-10-18T15:00:00Z",
    "fable": 0.0,
-   "haiku": 0.0,
+   "haiku": 0.01,
    "opus": 12.06,
    "other": 0.0,
    "sonnet": 0.0,
    "start": "2026-10-17T15:00:00Z",
    "state": "past",
-   "total": 12.06
+   "total": 12.07
   },
   {
    "end": "2026-10-19T15:00:00Z",
@@ -1188,15 +1221,15 @@
   {
    "end": "2026-10-21T15:00:00Z",
    "fable": 0.0,
-   "haiku": 0.0,
+   "haiku": 0.01,
    "official_peak": 27.0,
    "official_peak_trusted": false,
    "opus": 156.52,
    "other": 0.0,
    "sonnet": 13.62,
    "start": "2026-10-14T15:00:00Z",
-   "subagent": 31.66,
-   "total": 170.14
+   "subagent": 31.67,
+   "total": 170.15
   }
  ]
 }

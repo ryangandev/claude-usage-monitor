@@ -144,7 +144,7 @@ private struct AgentRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Dot(color: a.active ? Theme.live : Theme.idle, size: 7).frame(width: 8)
-            Text(a.description).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+            Text(a.label).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
             if !compact { Text(a.sessionTitle).lineLimit(1).foregroundStyle(Theme.sub).frame(width: 140, alignment: .leading) }
             Text(Fmt.kind(family: Fmt.family(ofModel: a.model), effort: a.effort)).foregroundStyle(Theme.sub).lineLimit(1).frame(width: 110, alignment: .leading)
             HStack(spacing: 6) {

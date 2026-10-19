@@ -52,6 +52,8 @@ def write_world(root):
     (agents / "agent-a2.jsonl").write_text("".join(
         call("s1", 200 + i, NOW - timedelta(minutes=40 - 8 * i), model="claude-sonnet-5-5", out=150_000) for i in range(5)))
     (agents / "agent-a2.meta.json").write_text(json.dumps({"description": "Implement search filters", "agentType": "general-purpose", "effort": "high"}))
+    # A subagent whose meta file is missing.
+    (agents / "agent-a3.jsonl").write_text(call("s1", 300, T0 + timedelta(days=3), model="claude-haiku-5-5", out=20_000))
     # A busy hour just now in another session, so the week runs out early.
     (api / "s2.jsonl").write_text("".join(call("s2", i, NOW - timedelta(minutes=55 - 5 * i), out=400_000) for i in range(11)))
     # A quiet session from midweek.

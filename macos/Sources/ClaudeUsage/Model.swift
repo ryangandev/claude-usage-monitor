@@ -62,11 +62,12 @@ struct UsageState: Decodable {
         var session: String?
         var model: String
         var context: Int
-        var description: String
+        var description: String?
         var effort: String
         var sessionTitle: String
         var active: Bool
         var id: String { agent }
+        @MainActor var label: String { description ?? L("（无描述）", "(no description)") }
     }
 
     struct Session: Decodable, Identifiable {

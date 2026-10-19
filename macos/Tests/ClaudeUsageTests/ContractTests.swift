@@ -21,6 +21,8 @@ final class ContractTests: XCTestCase {
         XCTAssertTrue(s.allSessions!.allSatisfy { $0.active != nil && $0.running != nil })
         XCTAssertTrue(s.agentCounts.byKind.allSatisfy { $0.cost != nil && $0.medianCost != nil })
         XCTAssertTrue(s.weeks.allSatisfy { $0.officialPeakTrusted != nil })
+        // A subagent without a meta file has no description, and the app shows its own fallback.
+        XCTAssertEqual(s.agents.filter { $0.description == nil }.map(\.agent), ["a3"])
     }
 
     func testTheScreensReadTheFixtureAsTheServerMeantIt() throws {

@@ -294,7 +294,7 @@ struct OverviewTab: View {
             ForEach(u.running.prefix(4)) { a in
                 HStack(spacing: 8) {
                     Dot()
-                    Text(a.description).lineLimit(1)
+                    Text(a.label).lineLimit(1)
                     Spacer(minLength: 8)
                     Text(Fmt.duration(a.last.timeIntervalSince(a.first))).sub(11).mono()
                     Text(Fmt.pct(u.pct(a.cost), digits: 1)).font(.system(size: 12, weight: .medium)).mono().frame(width: 44, alignment: .trailing)

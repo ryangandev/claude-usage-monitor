@@ -639,7 +639,7 @@ function agents(s) {
     (shown.map((a) => `
     <div class="row agent" title="${esc(a.session_title)}">
       ${a.active ? LIVE_ICON() : DONE_ICON()}
-      <span class="ellipsis strong">${esc(a.description)}</span>
+      <span class="ellipsis strong">${esc(a.description ?? L('（无描述）', '(no description)'))}</span>
       <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
       <span class="mono right muted">${a.calls}</span>
       <span class="mono right muted">${compact(a.context)}</span>

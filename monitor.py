@@ -519,7 +519,7 @@ def build_state(store, cfg, now=None):
         a["context"] = c["inp"] + c["cr"] + c["cw5"] + c["cw1"]
     for a in agents.values():
         meta = agent_meta.get(a["agent"]) or (None,) * 5
-        a["description"] = meta[1] or "(no description)"
+        a["description"] = meta[1]  # None when no meta file was found; the clients show their own fallback
         a["effort"] = meta[3] or "n/a"
         a["session_title"] = titles.get(a["session"], (a["session"] or "")[:8])
         a["cost"] = round(a["cost"], 2)
