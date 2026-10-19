@@ -5,6 +5,7 @@
 - Transcripts: `~/.claude/projects/<project>/<session>.jsonl`, and subagents in `<session>/subagents/agent-<id>.jsonl` with `agent-<id>.meta.json` (description, type, effort).
   Each assistant line carries one model call's token usage.
 - The plan meter: `~/Library/Application Support/Claude/plan-usage-history.json`, samples the app records now and then, `sd` the weekly limit and `fh` the 5-hour limit, in percent.
+  Weekly readings entered by hand go into the `readings` table and join these samples as weekly-only readings.
 - The plan tier: `oauthAccount.organizationRateLimitTier` in `~/.claude.json`.
 - Session titles: the app's `claude-code-sessions/.../local_*.json` (`cliSessionId` to `title`) and `custom-title.json` in a session folder.
 
@@ -25,6 +26,24 @@ The subscription is not billed this way; it is a yardstick that weights models r
 - 5-hour window: opens at the first call after the previous window closed, and lasts five hours.
 - Estimate = the last official reading inside the window (0 at the window's start if none) + spend since that reading / dollars per 1%.
 - Dollars per 1% is calibrated from consecutive official readings inside the current weekly window that rose and are at most 6 hours apart (2 hours for the 5-hour meter), once they add up to `min_calibration_pct`; until then it uses the per-tier fallback in the config.
-- Time to 100% assumes the last hour's spend continues.
+- Time to 100% assumes the last hour's spend continues; the week "runs out early" when that time is before the reset.
+- The forecast at the reset is the estimate divided by the share of the week gone, so it assumes the week's average pace continues.
+- The burn rate is the last hour's spend in percent per hour.
+
+## Shares of the limit
+
+Sessions, projects, subagents and the week's curve are shown as percent of the weekly limit.
+They use an effective dollars per 1%: this week's spend divided by the weekly estimate, so the parts add up to the estimate even before the rate is calibrated.
+The week's curve is the cumulative spend at the end of each hour since the reset, at that rate.
+
+## Sessions and subagents
+
+A session is active when it made a call in the last 10 minutes; active sessions sort first, the rest by spend this week.
+For each model and effort, the typical cost of one subagent is the median spend of finished ones, since running ones have not spent everything yet.
+
+## Past weeks
+
+Each past week shows its spend and the highest official reading inside it.
+That peak is trusted only when its spend per 1% is within a factor of three of the current rate, so a week whose readings do not match its spend shows "-".
 
 Override any config value in an untracked `config.json` next to `monitor.py`.

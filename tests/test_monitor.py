@@ -77,14 +77,37 @@ class MeterTest(unittest.TestCase):
         self.assertEqual(start, T0 + timedelta(hours=6))
 
     def test_subagents_count_by_kind_and_by_the_day_they_started(self):
-        def agent(model, effort, hours, active=False):
-            return {"model": model, "effort": effort, "first": monitor.iso(T0 + timedelta(hours=hours)), "active": active}
+        def agent(model, effort, hours, cost, active=False):
+            return {"model": model, "effort": effort, "first": monitor.iso(T0 + timedelta(hours=hours)), "cost": cost, "active": active}
         counts = monitor.agent_counts([
-            agent("claude-opus-5-5", "xhigh", 1), agent("claude-opus-5-5", "xhigh", 30, active=True),
-            agent("claude-sonnet-5-5", "high", 2), agent("claude-opus-5-5", "xhigh", -3),
+            agent("claude-opus-5-5", "xhigh", 1, 4.0), agent("claude-opus-5-5", "xhigh", 30, 50.0, active=True),
+            agent("claude-sonnet-5-5", "high", 2, 1.0), agent("claude-opus-5-5", "xhigh", -3, 6.0),
         ], T0)
         self.assertEqual((counts["total"], counts["active"], counts["per_day"]), (4, 1, [3, 1, 0, 0, 0, 0, 0]))
-        self.assertEqual(counts["by_kind"][0], {"family": "opus", "effort": "xhigh", "count": 3})
+        # The running one counts and spends, but stays out of the median of a finished one.
+        self.assertEqual(counts["by_kind"][0], {"family": "opus", "effort": "xhigh", "count": 3, "cost": 60.0, "median_cost": 5.0})
+
+    def test_week_curve_climbs_by_the_hour_and_ends_now(self):
+        calls = [{"t": T0 + timedelta(minutes=30), "cost": 10.0}, {"t": T0 + timedelta(minutes=90), "cost": 20.0}]
+        points = monitor.week_curve(calls, T0, T0 + timedelta(minutes=100), 0.5)
+        self.assertEqual([p["pct"] for p in points], [0.0, 5.0, 15.0])
+        self.assertEqual(points[-1]["t"], monitor.iso(T0 + timedelta(minutes=100)))
+
+    def test_a_peak_that_disagrees_with_the_spend_is_not_trusted(self):
+        self.assertFalse(monitor.peak_trusted(100, 69.0, 23.5))
+        self.assertTrue(monitor.peak_trusted(100, 5538.0, 23.5))
+        self.assertFalse(monitor.peak_trusted(None, 100.0, 23.5))
+
+
+class ReadingTest(unittest.TestCase):
+    def test_a_reading_entered_by_hand_becomes_the_official_base(self):
+        store = monitor.Store(":memory:")
+        monitor.add_reading(store, 30, now=T0 + timedelta(hours=2))
+        with self.assertRaises(ValueError):
+            monitor.add_reading(store, 130)
+        samples = [s for s in monitor.meter_samples(store) if s["t"] >= T0]
+        m = monitor.estimate_meter(samples, "sd", T0, T0 + timedelta(hours=3), 10.0, lambda a, b: 20.0)
+        self.assertEqual((m["official"], m["estimate"]), (30, 32.0))
 
 
 if __name__ == "__main__":

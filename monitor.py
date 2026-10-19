@@ -82,7 +82,11 @@ CREATE INDEX IF NOT EXISTS calls_ts ON calls(ts);
 CREATE TABLE IF NOT EXISTS files (path TEXT PRIMARY KEY, ino INTEGER, offset INTEGER);
 CREATE TABLE IF NOT EXISTS agents (
   agent TEXT PRIMARY KEY, session TEXT, description TEXT, agent_type TEXT, effort TEXT, model TEXT);
+CREATE TABLE IF NOT EXISTS readings (t TEXT PRIMARY KEY, sd REAL);
 """
+
+# Bumped when the state's shape changes, so the menu bar app can tell an old server from its own.
+API_VERSION = 2
 
 
 class Store:
@@ -219,17 +223,32 @@ def plan_tier():
     return acct.get("organizationRateLimitTier")
 
 
-def meter_samples():
+def meter_samples(store=None):
+    """The app's sampled meter, plus weekly readings entered by hand, oldest first."""
     try:
         samples = json.loads(METER_FILE.read_text()).get("samples", [])
     except (OSError, ValueError):
-        return []
+        samples = []
     out = []
     for s in samples:
         u = s.get("u") or {}
         if "sd" in u or "fh" in u:
             out.append({"t": datetime.fromtimestamp(s["t"] / 1000, timezone.utc), "sd": u.get("sd"), "fh": u.get("fh")})
-    return out
+    if store is not None:
+        with store.lock:
+            for t, sd in store.db.execute("SELECT t, sd FROM readings"):
+                out.append({"t": parse_ts(t), "sd": sd, "fh": None})
+    return sorted(out, key=lambda s: s["t"])
+
+
+def add_reading(store, pct, now=None):
+    """Record a weekly reading the user read off claude.ai, as if the app had sampled it."""
+    pct = float(pct)
+    if not 0 <= pct <= 100:
+        raise ValueError("a reading is a percentage from 0 to 100")
+    with store.lock:
+        store.db.execute("INSERT OR REPLACE INTO readings VALUES (?, ?)", (iso(now or datetime.now(timezone.utc)), pct))
+        store.db.commit()
 
 
 def week_bounds(now, anchor):
@@ -289,7 +308,14 @@ def family(model):
 _history_cache = {"at": 0.0, "value": None}
 
 
-def weekly_history(store, cfg, samples, now, weeks=8):
+def peak_trusted(peak, spend, rate):
+    """Whether a week's highest official reading agrees with what it spent, within a factor of three of the current rate."""
+    if not peak or not rate:
+        return False
+    return rate / 3 <= spend / peak <= rate * 3
+
+
+def weekly_history(store, cfg, samples, now, rate=None, weeks=8):
     """Spend and the highest official reading for each of the last weekly windows."""
     if _history_cache["value"] is not None and time.time() - _history_cache["at"] < 60:
         return _history_cache["value"]
@@ -317,6 +343,7 @@ def weekly_history(store, cfg, samples, now, weeks=8):
     for w in out:
         for k in ("total", "subagent", "opus", "sonnet", "haiku", "fable", "other"):
             w[k] = round(w[k], 2)
+        w["official_peak_trusted"] = peak_trusted(w["official_peak"], w["total"], rate)
     _history_cache.update(at=time.time(), value=out)
     return out
 
@@ -336,16 +363,46 @@ def week_days(calls, w_start, now):
     return days
 
 
+def median(xs):
+    xs = sorted(xs)
+    n = len(xs)
+    return (xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2) if n else 0.0
+
+
 def agent_counts(agents, w_start):
-    """How many subagents ran this week, by model and effort, and how many started on each of its seven days."""
+    """How many subagents ran this week, by model and effort, and how many started on each of its seven days.
+
+    Each kind also carries what it spent and what one finished subagent of it typically costs;
+    running ones are left out of that median, since they have not spent everything yet.
+    """
     kinds, per_day = {}, [0] * 7
     for a in agents:
-        k = (family(a["model"]), a["effort"])
-        kinds[k] = kinds.get(k, 0) + 1
+        k = kinds.setdefault((family(a["model"]), a["effort"]), {"count": 0, "cost": 0.0, "done": []})
+        k["count"] += 1
+        k["cost"] += a["cost"]
+        if not a["active"]:
+            k["done"].append(a["cost"])
         day = int((parse_ts(a["first"]) - w_start) / timedelta(days=1))
         per_day[min(max(day, 0), 6)] += 1
+    by_kind = [{"family": f, "effort": e, "count": k["count"], "cost": round(k["cost"], 2), "median_cost": round(median(k["done"]), 2)}
+               for (f, e), k in kinds.items()]
     return {"total": len(agents), "active": sum(1 for a in agents if a["active"]), "per_day": per_day,
-            "by_kind": [{"family": f, "effort": e, "count": n} for (f, e), n in sorted(kinds.items(), key=lambda kv: -kv[1])]}
+            "by_kind": sorted(by_kind, key=lambda k: -k["count"])}
+
+
+def week_curve(calls, w_start, now, scale):
+    """Percent of the weekly limit used by the end of each hour since the reset, ending at now."""
+    points, used, i = [{"t": iso(w_start), "pct": 0.0}], 0.0, 0
+    t = w_start + timedelta(hours=1)
+    while True:
+        end = min(t, now)
+        while i < len(calls) and calls[i]["t"] < end:
+            used += calls[i]["cost"]
+            i += 1
+        points.append({"t": iso(end), "pct": round(used * scale, 2)})
+        if end >= now:
+            return points
+        t += timedelta(hours=1)
 
 
 def build_state(store, cfg, now=None):
@@ -369,7 +426,7 @@ def build_state(store, cfg, now=None):
         return cum[bisect.bisect_left(times, b)] - cum[bisect.bisect_left(times, a)]
 
     tier = plan_tier()
-    samples = meter_samples()
+    samples = meter_samples(store)
     w_start, w_end = week_bounds(now, cfg["week_anchor"])
     week = [c for c in calls if c["t"] >= w_start]
 
@@ -446,20 +503,33 @@ def build_state(store, cfg, now=None):
     sessions = {}
     for c in week:
         s = sessions.setdefault(c["session"], {"session": c["session"], "title": titles.get(c["session"], (c["session"] or "")[:8]),
-                                               "project": c["project"], "main": 0.0, "sub": 0.0, "agents": set(), "last": c["ts"]})
+                                               "project": c["project"], "main": 0.0, "sub": 0.0, "agents": set(), "running": set(), "last": c["ts"]})
         s["sub" if c["agent"] else "main"] += c["cost"]
         if c["agent"]:
             s["agents"].add(c["agent"])
+            if agents[c["agent"]]["active"]:
+                s["running"].add(c["agent"])
         s["last"] = c["ts"]
-    session_list = sorted(({**s, "agents": len(s["agents"]), "main": round(s["main"], 2), "sub": round(s["sub"], 2),
-                            "total": round(s["main"] + s["sub"], 2)} for s in sessions.values()), key=lambda s: -s["total"])
+    # A session is active when it made a call in the last 10 minutes.
+    session_list = sorted(({**s, "agents": len(s["agents"]), "running": len(s["running"]), "main": round(s["main"], 2), "sub": round(s["sub"], 2),
+                            "total": round(s["main"] + s["sub"], 2), "active": parse_ts(s["last"]) >= now - timedelta(minutes=10)}
+                           for s in sessions.values()), key=lambda s: -s["total"])
 
     week_total = sum(c["cost"] for c in week)
+    # Dollars per 1% that make this week's spend add up to the estimate; per-session and per-agent shares use it.
+    effective = week_total / weekly["estimate"] if weekly["estimate"] > 0 and week_total > 0 else w_rate
+    elapsed = (now - w_start) / (w_end - w_start)
+    eta_week = eta(weekly["estimate"], w_rate)
     return {
+        "api_version": API_VERSION,
         "now": iso(now),
         "tier": tier,
         "weekly": {**weekly, "start": iso(w_start), "end": iso(w_end), "dollars_per_pct": round(w_rate, 2),
-                   "rate_source": w_rate_src, "calibration_pct": w_cal, "eta_full": eta(weekly["estimate"], w_rate)},
+                   "rate_source": w_rate_src, "calibration_pct": w_cal, "eta_full": eta_week,
+                   "runs_out_early": eta_week is not None and parse_ts(eta_week) < w_end,
+                   "burn_pct_per_hour": round(burn / w_rate, 2),
+                   "forecast_at_reset": round(weekly["estimate"] / elapsed, 1) if elapsed > 0 else None,
+                   "effective_dollars_per_pct": round(effective, 2)},
         "five_hour": {**five, "start": iso(h_start) if h_start else None, "end": iso(h_end) if h_end else None,
                       "dollars_per_pct": round(h_rate, 2), "rate_source": h_rate_src, "calibration_pct": h_cal,
                       "eta_full": eta(five["estimate"], h_rate) if h_start else None},
@@ -473,12 +543,14 @@ def build_state(store, cfg, now=None):
         "agents": agent_list[:300],
         "active_agents": sum(1 for a in agent_list if a["active"]),
         "sessions": session_list[:20],
+        "all_sessions": session_list[:500],
+        "week_curve": week_curve(week, w_start, now, 1 / effective),
         "last_call": calls[-1]["ts"] if calls else None,
         "week_days": week_days(week, w_start, now),
         "agent_counts": agent_counts(agent_list, w_start),
         "week_elapsed_days": round((now - w_start) / timedelta(days=1), 2),
         "daily_budget": round(w_rate * 100 / 7, 2),
-        "weeks": weekly_history(store, cfg, samples, now),
+        "weeks": weekly_history(store, cfg, samples, now, w_rate),
     }
 
 
@@ -496,6 +568,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_POST(self):
+        # Only the app posts here. A page in a browser cannot send this header to another origin
+        # without a preflight, which this server never answers, so no other site can write a reading.
+        if self.path != "/api/reading" or self.headers.get("X-Claude-Usage") != "1":
+            self.send(403, b"forbidden", "text/plain")
+            return
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)))
+            add_reading(self.store, body["weekly"])
+        except (ValueError, KeyError, TypeError) as exc:
+            self.send(400, str(exc).encode(), "text/plain")
+            return
+        _history_cache["value"] = None
+        self.send(204, b"", "text/plain")
+
     def do_GET(self):
         if self.path == "/api/state":
             body = json.dumps(build_state(self.store, self.cfg)).encode()
@@ -509,8 +596,14 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--once", action="store_true", help="scan once, print a summary and exit")
+    ap.add_argument("--db", help="where to keep state.db (default: next to monitor.py)")
+    ap.add_argument("--port", type=int, help="port to serve on (default: 8765)")
     args = ap.parse_args()
     cfg = load_config()
+    if args.db:
+        cfg["db_path"] = args.db
+    if args.port:
+        cfg["port"] = args.port
     store = Store(cfg["db_path"])
     t0 = time.time()
     n = scan_once(store, cfg)
