@@ -106,7 +106,9 @@ def project_name(dirname):
 
 
 def transcript_files(projects=PROJECTS):
-    return glob.glob(str(projects / "*" / "*.jsonl")) + glob.glob(str(projects / "*" / "*" / "subagents" / "*.jsonl"))
+    # A symlinked project folder, left by a renamed repository, is another name for a real one: skip it so its calls keep the real name.
+    dirs = [d for d in glob.glob(str(projects / "*")) if not os.path.islink(d)]
+    return [f for d in dirs for f in glob.glob(os.path.join(d, "*.jsonl")) + glob.glob(os.path.join(d, "*", "subagents", "*.jsonl"))]
 
 
 def parse_line(line, path, projects, cfg):

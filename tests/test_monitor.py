@@ -56,6 +56,14 @@ class ScanTest(unittest.TestCase):
         monitor.scan_once(self.store, self.cfg, self.projects)
         self.assertEqual(self.count()[0], 1)
 
+    def test_a_symlinked_project_folder_is_not_read_again_under_its_old_name(self):
+        (self.projects / "-Users-x-old").symlink_to(self.projects / "-Users-x-proj")
+        self.file.write_text(assistant("m1", "r1", "2026-10-14T15:00:00Z"))
+        monitor.scan_once(self.store, self.cfg, self.projects)
+        projects = [p for (p,) in self.store.db.execute("SELECT project FROM calls")]
+        self.assertEqual(projects, [monitor.project_name("-Users-x-proj")])
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM files").fetchone()[0], 1)
+
 
 class MeterTest(unittest.TestCase):
     def test_estimate_adds_spend_since_the_last_official_reading(self):

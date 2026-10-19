@@ -4,6 +4,7 @@
 
 - Transcripts: `~/.claude/projects/<project>/<session>.jsonl`, and subagents in `<session>/subagents/agent-<id>.jsonl` with `agent-<id>.meta.json` (description, type, effort).
   Each assistant line carries one model call's token usage.
+  A project folder that is a symlink, left behind by a renamed repository, is skipped, so its calls are read once and keep the real folder's name.
 - The plan meter: `~/Library/Application Support/Claude/plan-usage-history.json`, samples the app records now and then, `sd` the weekly limit and `fh` the 5-hour limit, in percent.
   Weekly readings entered by hand go into the `readings` table and join these samples as weekly-only readings.
 - The plan tier: `oauthAccount.organizationRateLimitTier` in `~/.claude.json`.
