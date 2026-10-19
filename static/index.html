@@ -69,6 +69,8 @@ nav { display: flex; flex-direction: column; gap: 1px; }
 .seg.small { border-radius: 7px; }
 .seg.small .thumb { border-radius: 5px; }
 .seg.small button { width: 64px; height: 26px; border-radius: 5px; }
+.seg.small.three { width: 196px; }
+.seg.small.three button { width: auto; }
 .seg button:active, .nav:active, .more:active { transform: scale(.97); }
 
 main { flex: 1 1 auto; min-width: 0; padding: 8px 8px 8px 0; }
@@ -89,8 +91,9 @@ h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.
 .badge.calm { color: var(--muted); }
 
 .kpis { display: flex; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.kpi { flex: 1 1 200px; min-width: 0; padding: 16px 18px; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); display: flex; flex-direction: column; gap: 10px; }
+.kpi { flex: 1 1 176px; min-width: 0; padding: 16px 18px; box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); display: flex; flex-direction: column; gap: 10px; }
 .kpi-top { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.kpi-top span:first-child { white-space: nowrap; }
 .kpi-top span:last-child { font-size: 12px; text-align: right; }
 .kpi-value { font-size: 26px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
 .track { position: relative; height: 4px; border-radius: 2px; background: var(--active); }
@@ -122,13 +125,20 @@ h2 { font-size: 14px; font-weight: 600; }
 .hours .bar { width: 100%; border-radius: 2px 2px 0 0; }
 .future { width: min(40px, 60%); height: 100%; border: 1px dashed var(--border); border-bottom: 0; border-radius: 4px 4px 0 0; }
 .xlabels { display: flex; gap: 10px; padding-top: 8px; font-size: 12px; color: var(--muted); }
-.xlabels > div { flex: 1 1 0; min-width: 0; text-align: center; }
+.xlabels > div { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; }
 .xlabels .today { color: var(--text); font-weight: 500; }
 .xlabels.spread { justify-content: space-between; gap: 0; font-size: 11px; }
 .xlabels.spread > div { flex: none; }
 .yaxis { position: relative; flex: none; width: 60px; height: 200px; font-size: 11px; color: var(--muted); }
 .yaxis span { position: absolute; left: 0; transform: translateY(-50%); white-space: nowrap; }
 .yaxis .strong { color: var(--text); }
+.curve { position: relative; height: 200px; }
+.curve svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.curve .label { position: absolute; transform: translate(10px, 6px); font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.curve .label.end { transform: translate(calc(-100% - 10px), -50%); color: var(--warn); }
+.curve .label.edge { transform: translate(calc(-100% - 10px), 6px); }
+.curve .pt { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 2px solid var(--panel); }
+.ln { display: inline-block; width: 14px; border-top: 2px solid; flex: none; }
 .tip { position: absolute; left: 50%; z-index: 3; width: max-content; max-width: 220px; padding: 8px 10px; border-radius: 7px; background: var(--tip); color: var(--tip-text); font-size: 12px; pointer-events: none;
   opacity: 0; transform: translate(-50%, 4px) scale(.97); transform-origin: bottom center; transition: opacity 125ms ease-out, transform 125ms ease-out; }
 .tip .mono { opacity: .75; }
@@ -150,7 +160,9 @@ h2 { font-size: 14px; font-weight: 600; }
 .row { display: grid; align-items: center; gap: 12px; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--border); }
 .row.agent { grid-template-columns: 16px minmax(0, 1fr) 148px 56px 60px 72px 80px; }
 .row.week { grid-template-columns: minmax(0, 1fr) 84px 72px 72px 168px; }
-.row.session { grid-template-columns: minmax(0, 1fr) 96px 64px 76px 76px 80px; }
+.row.session { grid-template-columns: 8px minmax(0, 1fr) 120px 64px 76px 76px 80px; }
+.row.project { grid-template-columns: 8px minmax(0, 1fr) 120px 64px 76px 76px 80px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 .row.header { height: 32px; color: var(--muted); font-size: 12px; }
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strong { font-weight: 500; }
@@ -184,6 +196,8 @@ footer p { margin: 0; }
   .content { padding: 20px 16px 32px; }
   .topbar { padding: 0 16px; }
   .effort { grid-template-columns: 112px minmax(0, 1fr) 56px 44px; }
+  .plot.days, .xlabels { gap: 4px; }
+  .yaxis { width: 44px; }
 }
 </style>
 </head>
@@ -239,8 +253,9 @@ footer p { margin: 0; }
             <div class="title"><h2>消耗</h2><span class="muted" id="chart-caption"></span></div>
             <div class="legend">
               <span id="chart-legend" class="legend"></span>
-              <div class="seg small" role="radiogroup" aria-label="图表范围" id="range-seg">
-                <div class="thumb" style="width: calc(50% - 2px)"></div>
+              <div class="seg small three" role="radiogroup" aria-label="图表范围" id="range-seg">
+                <div class="thumb" style="width: calc((100% - 4px) / 3)"></div>
+                <button role="radio" data-value="curve">累计</button>
                 <button role="radio" data-value="day">每天</button>
                 <button role="radio" data-value="hour">每小时</button>
               </div>
@@ -270,14 +285,22 @@ footer p { margin: 0; }
         </section>
 
         <section id="sessions">
-          <div class="section-head"><div class="title"><h2>会话</h2><span class="muted">本周花费最多</span></div></div>
+          <div class="section-head">
+            <div class="title"><h2>会话</h2><span class="muted" id="sessions-caption"></span></div>
+            <div class="seg small" role="radiogroup" aria-label="分组" id="group-seg">
+              <div class="thumb" style="width: calc(50% - 2px)"></div>
+              <button role="radio" data-value="session">会话</button>
+              <button role="radio" data-value="project">项目</button>
+            </div>
+          </div>
           <div class="table"><div class="rows" id="session-rows"></div></div>
+          <button class="more" id="sessions-more" hidden></button>
         </section>
 
         <section id="weeks">
           <div class="section-head"><h2>往周</h2></div>
           <div class="table"><div class="rows" style="min-width: 620px" id="week-rows"></div></div>
-          <div class="note">10/14 之前删掉的会话没有记录，那几周金额偏低；官方最高读数不受影响。</div>
+          <div class="note" id="weeks-note">10/14 之前删掉的会话没有记录，那几周金额偏低。官方最高读数和花费对不上的周显示“-”。</div>
         </section>
 
         <footer>
@@ -321,6 +344,21 @@ const niceMax = (v) => {
   return [1, 2, 2.5, 4, 5, 8, 10].map((m) => m * step).find((x) => x >= v);
 };
 
+// What the views show, worked out from one state the way the menu bar app's Usage does.
+const derive = (s) => {
+  const w = s.weekly, end = new Date(w.end);
+  const rate = w.effective_dollars_per_pct || w.dollars_per_pct || 1;
+  const runsOut = w.eta_full && (w.runs_out_early ?? new Date(w.eta_full) < end) ? new Date(w.eta_full) : null;
+  const isActive = (x) => x.active ?? (new Date(s.now) - new Date(x.last) < 600000);
+  const all = (s.all_sessions && s.all_sessions.length ? s.all_sessions : s.sessions)
+    .slice().sort((a, b) => isActive(a) !== isActive(b) ? (isActive(a) ? -1 : 1) : b.total - a.total);
+  return {
+    rate, runsOut, isActive, sessions: all,
+    burn: w.burn_pct_per_hour ?? s.burn_last_hour / w.dollars_per_pct,
+    pct: (dollars) => dollars / rate,
+  };
+};
+
 // Appearance: system, light or dark, remembered in this browser.
 function segment(box, value) {
   const buttons = [...box.querySelectorAll('button')];
@@ -336,8 +374,8 @@ function setTheme(value, save) {
 $('theme').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.value, true); });
 setTheme(document.documentElement.dataset.theme, false);
 
-let view = 'day';
-try { view = localStorage.getItem('chart') || 'day'; } catch (e) {}
+let view = 'curve';
+try { view = localStorage.getItem('chart') || 'curve'; } catch (e) {}
 segment($('range-seg'), view);
 $('range-seg').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
@@ -345,6 +383,18 @@ $('range-seg').addEventListener('click', (e) => {
   try { localStorage.setItem('chart', view); } catch (e) {}
   if (last) chart(last);
 });
+
+let group = 'session';
+try { group = localStorage.getItem('group') || 'session'; } catch (e) {}
+segment($('group-seg'), group);
+$('group-seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  group = b.dataset.value; segment($('group-seg'), group);
+  try { localStorage.setItem('group', group); } catch (e) {}
+  if (last) sessions(last);
+});
+let showAllSessions = false;
+$('sessions-more').addEventListener('click', () => { showAllSessions = !showAllSessions; if (last) sessions(last); });
 
 let showAllAgents = false;
 $('agents-more').addEventListener('click', () => { showAllAgents = !showAllAgents; if (last) agents(last); });
@@ -356,19 +406,22 @@ function header(s) {
   const day = Math.min(7, Math.floor(s.week_elapsed_days) + 1);
   $('range').textContent = dayTime(w.start) + ' 重置，' + dayTime(w.end) + ' 再重置 · 第 ' + day + ' 天，共 7 天';
   const elapsed = s.week_elapsed_days / 7 * 100, diff = w.estimate - elapsed;
-  const fullBeforeReset = w.eta_full && new Date(w.eta_full) < new Date(w.end);
-  const tail = fullBeforeReset ? ' · 预计 ' + dayTime(w.eta_full) + ' 用满' : ' · 重置前用不满';
+  const u = derive(s);
+  const tail = w.estimate >= 100 ? ' · 已用满'
+    : u.runsOut ? ' · 按现在的速度 ' + dayTime(u.runsOut) + ' 用满'
+    : w.forecast_at_reset != null ? ' · 按本周平均，重置时约 ' + pct0(w.forecast_at_reset)
+    : '';
   const up = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l4-4 3 3 4-5"/><path d="M10 5h4v4"/></svg>';
   const down = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 3-3 4 5"/><path d="M10 11h4V7"/></svg>';
   const pace = $('pace');
-  if (diff > 1) { pace.className = 'badge warn'; pace.innerHTML = up + esc('比均匀用快 ' + Math.round(diff) + ' 个点' + tail); }
+  if (u.runsOut || diff > 1) { pace.className = 'badge warn'; pace.innerHTML = up + esc((diff > 1 ? '比均匀用快 ' + Math.round(diff) + ' 个点' : '节奏正好') + tail); }
   else if (diff < -1) { pace.className = 'badge ok'; pace.innerHTML = down + esc('比均匀用慢 ' + Math.round(-diff) + ' 个点' + tail); }
   else { pace.className = 'badge calm'; pace.textContent = '节奏正好' + tail; }
   $('updated').textContent = '实时 · ' + now.toLocaleTimeString('zh-CN', {hour12: false});
 }
 
 function kpis(s) {
-  const w = s.weekly, h = s.five_hour, elapsed = s.week_elapsed_days / 7 * 100;
+  const w = s.weekly, h = s.five_hour, elapsed = s.week_elapsed_days / 7 * 100, u = derive(s);
   const level = (v, ahead) => v >= 90 ? 'var(--danger)' : v >= 70 || ahead ? 'var(--warn-fill)' : 'var(--opus)';
   const official = (m) => m.official == null ? '暂无官方读数' : '估算 · 官方 ' + pct0(m.official);
   const items = [
@@ -376,9 +429,9 @@ function kpis(s) {
     h.start
       ? {label: '5 小时窗口', note: hm(new Date(h.start)) + ' – ' + hm(new Date(h.end)), value: pct0(h.estimate), fill: h.estimate, official: h.official, color: level(h.estimate, false)}
       : {label: '5 小时窗口', note: '没有进行中的窗口', value: '0%', fill: 0, color: 'var(--opus)'},
-    {label: '本周花费', note: '日均配额 ' + usd(s.daily_budget), value: usd(s.week.total), fill: s.week.total / (w.dollars_per_pct * 100) * 100, color: 'var(--opus)'},
+    {label: '本周花费', note: '日均配额 ' + usd(s.daily_budget), value: usd(s.week.total), fill: u.pct(s.week.total), color: 'var(--opus)'},
     agentKpi(s),
-    {label: '子代理占比', note: '最近 1 小时 ' + usd(s.burn_last_hour), value: s.week.total ? pct0(s.week.subagent / s.week.total * 100) : '-', fill: s.week.total ? s.week.subagent / s.week.total * 100 : 0, color: 'var(--muted)'},
+    {label: '子代理占比', note: '最近 1 小时 ' + usd(s.burn_last_hour) + ' · ' + u.burn.toFixed(1) + '%', value: s.week.total ? pct0(s.week.subagent / s.week.total * 100) : '-', fill: s.week.total ? s.week.subagent / s.week.total * 100 : 0, color: 'var(--muted)'},
   ];
   $('kpis').innerHTML = items.map((k) => `
     <div class="kpi">
@@ -406,7 +459,50 @@ function stackedBar(row, total) {
   return FAMILIES.filter((f) => row[f] > 0).map((f) => `<div style="background:var(--${f});height:${row[f] / total * 100}%"></div>`).join('');
 }
 
+function curve(s) {
+  const w = s.weekly, u = derive(s), now = new Date(s.now);
+  const t0 = new Date(w.start), t1 = new Date(w.end), span = t1 - t0;
+  const x = (t) => Math.min(100, Math.max(0, (new Date(t) - t0) / span * 100));
+  const y = (v) => (1 - Math.min(100, v) / 100) * 100;
+  const pts = (s.week_curve && s.week_curve.length ? s.week_curve : [{t: w.start, pct: 0}, {t: s.now, pct: w.estimate}]);
+  const line = pts.map((p) => x(p.t) * 10 + ',' + y(p.pct) * 2).join(' ');
+  const nx = x(now), ny = y(w.estimate);
+  const fast = u.burn > 0 ? (u.runsOut ? [u.runsOut, 100] : [t1, w.estimate + u.burn * (t1 - now) / 3600000]) : null;
+  const seg = (a, b, stroke, dash, width) => `<line x1="${a[0] * 10}" y1="${a[1] * 2}" x2="${b[0] * 10}" y2="${b[1] * 2}" stroke="${stroke}" stroke-width="${width}" stroke-dasharray="${dash}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+  $('chart-legend').innerHTML = [
+    ['var(--opus)', 'solid', '实际'],
+    ...(fast ? [['var(--warn-fill)', 'dashed', '按最近 1 小时']] : []),
+    ...(w.forecast_at_reset != null ? [['var(--muted)', 'dotted', '按本周平均']] : []),
+    ['var(--faint)', 'dashed', '时间进度'],
+  ].map(([c, st, t]) => `<span><i class="ln" style="border-top-color:${c};border-top-style:${st}"></i>${t}</span>`).join('');
+  $('chart-caption').textContent = '从重置起累计，占每周额度';
+  const days = s.week_days.map((d) => `<div class="${d.state === 'current' ? 'today' : ''}">周${WEEKDAY[new Date(d.start).getDay()]}</div>`).join('');
+  const full = u.runsOut ? `<div class="pt" style="left:${x(u.runsOut)}%;top:0;background:var(--warn-fill)"></div>
+    <div class="label end" style="left:${x(u.runsOut)}%;top:0">${esc(dayTime(u.runsOut))} 用满</div>` : '';
+  $('chart').innerHTML = `
+    <div class="plot-wrap">
+      <div class="curve" style="border-bottom:1px solid var(--border)">
+        ${[25, 50, 75].map((v) => `<div class="grid-line" style="top:${y(v)}%"></div>`).join('')}
+        <svg viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+          ${seg([0, 100], [100, 0], 'var(--faint)', '4 4', 1)}
+          ${w.forecast_at_reset != null ? seg([nx, ny], [100, y(w.forecast_at_reset)], 'var(--muted)', '1 5', 2) : ''}
+          ${fast ? seg([nx, ny], [x(fast[0]), y(fast[1])], 'var(--warn-fill)', '6 4', 2) : ''}
+          <polygon points="0,200 ${line} ${nx * 10},200" fill="var(--opus)" opacity=".08"/>
+          <polyline points="${line}" fill="none" stroke="var(--opus)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        </svg>
+        ${full}
+        <div class="pt" style="left:${nx}%;top:${ny}%;background:var(--opus)"></div>
+        <div class="label mono${nx > 88 ? ' edge' : ''}" style="left:${nx}%;top:${ny}%">现在 ${pct0(w.estimate)}</div>
+      </div>
+      <div class="xlabels" style="gap:0">${days}</div>
+    </div>
+    <div class="yaxis mono">
+      ${[100, 75, 50, 25, 0].map((v) => `<span style="top:${y(v)}%">${v}%</span>`).join('')}
+    </div>`;
+}
+
 function chart(s) {
+  if (view === 'curve') return curve(s);
   const rows = view === 'day' ? s.week_days : s.hours.slice(-48);
   const present = FAMILIES.filter((f) => rows.some((r) => r[f] > 0));
   $('chart-legend').innerHTML = (present.length ? present : ['opus']).map((f) => `<span><i class="sw" style="background:var(--${f})"></i>${FAMILY_NAME[f]}</span>`).join('');
@@ -498,7 +594,7 @@ function agents(s) {
   const shown = showAllAgents ? list : list.slice(0, Math.max(12, s.active_agents));
   const c = s.agent_counts;
   $('agents-caption').textContent = '本周 ' + c.total + ' 个 · ' + c.active + ' 个正在运行';
-  $('agent-kinds').innerHTML = c.by_kind.map((k) => `<span class="chip"><i style="background:var(--${k.family})"></i>${FAMILY_NAME[k.family]}<span class="muted">${esc(k.effort)}</span><span class="mono">${k.count}</span></span>`).join('');
+  $('agent-kinds').innerHTML = c.by_kind.map((k) => `<span class="chip"><i style="background:var(--${k.family})"></i>${FAMILY_NAME[k.family]}<span class="muted">${esc(k.effort)}</span><span class="mono">${k.count}</span>${k.median_cost > 0 ? `<span class="mono muted">· 中位 ${usd(k.median_cost)}</span>` : ''}</span>`).join('');
   $('nav-agents').textContent = s.active_agents || '';
   $('agent-rows').innerHTML = `<div class="row agent header"><span></span><span>任务</span><span>模型</span><span class="right">调用</span><span class="right">上下文</span><span class="right">API 等价</span><span class="right">最后活动</span></div>` +
     (shown.map((a) => `
@@ -517,18 +613,51 @@ function agents(s) {
 }
 
 function sessions(s) {
-  const now = new Date(s.now);
-  $('nav-sessions').textContent = s.sessions.length || '';
-  $('session-rows').innerHTML = `<div class="row session header"><span>会话</span><span>项目</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>` +
-    (s.sessions.map((x) => `
+  const now = new Date(s.now), u = derive(s);
+  const dot = (on) => on ? '<span class="live-dot" title="最近 10 分钟有动静"></span>' : '<span></span>';
+  const running = (n) => n ? ` <span class="muted" style="font-weight:400">· ${n} 个子代理运行中</span>` : '';
+  const live = u.sessions.filter(u.isActive).length;
+  $('nav-sessions').textContent = u.sessions.length || '';
+  let rows, head, count;
+  if (group === 'project') {
+    const byName = new Map();
+    for (const x of u.sessions) byName.set(x.project, [...(byName.get(x.project) || []), x]);
+    const sum = (list, k) => list.reduce((a, x) => a + x[k], 0);
+    const projects = [...byName].map(([name, list]) => ({name, list, active: list.some(u.isActive), total: sum(list, 'total')}))
+      .sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.total - a.total);
+    count = projects.length;
+    $('sessions-caption').textContent = '本周 ' + count + ' 个项目 · 有绿点的最近 10 分钟有动静';
+    head = `<div class="row project header"><span></span><span>项目</span><span class="right">会话</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>`;
+    rows = projects.map((p) => `
+    <div class="row project">
+      ${dot(p.active)}
+      <span class="ellipsis strong">${esc(p.name)}${running(sum(p.list, 'running'))}</span>
+      <span class="mono right muted">${p.list.length}</span>
+      <span class="mono right muted">${sum(p.list, 'agents')}</span>
+      <span class="mono right muted">${usd(p.total - sum(p.list, 'sub'))}</span>
+      <span class="mono right">${usd(p.total)}</span>
+      <span class="right muted">${ago(p.list.map((x) => x.last).sort().pop(), now)}</span>
+    </div>`);
+  } else {
+    count = u.sessions.length;
+    $('sessions-caption').textContent = '本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前';
+    head = `<div class="row session header"><span></span><span>会话</span><span>项目</span><span class="right">子代理</span><span class="right">主会话</span><span class="right">合计</span><span class="right">最后活动</span></div>`;
+    rows = u.sessions.map((x) => `
     <div class="row session">
-      <span class="ellipsis strong">${esc(x.title)}</span>
+      ${dot(u.isActive(x))}
+      <span class="ellipsis strong">${esc(x.title)}${running(x.running)}</span>
       <span class="ellipsis muted">${esc(x.project)}</span>
       <span class="mono right muted">${x.agents}</span>
       <span class="mono right muted">${usd(x.main)}</span>
       <span class="mono right">${usd(x.total)}</span>
       <span class="right muted">${ago(x.last, now)}</span>
-    </div>`).join('') || '<div class="empty">本周还没有会话。</div>');
+    </div>`);
+  }
+  const shown = showAllSessions ? rows : rows.slice(0, 20);
+  $('session-rows').innerHTML = head + (shown.join('') || '<div class="empty">本周还没有会话。</div>');
+  const more = $('sessions-more');
+  more.hidden = rows.length <= 20;
+  more.textContent = showAllSessions ? '收起' : '显示全部 ' + rows.length + ' 个';
 }
 
 function weeks(s) {
@@ -542,7 +671,7 @@ function weeks(s) {
       const sub = cur ? s.week.subagent : w.subagent;
       const sonnet = cur ? s.week.by_model.filter((m) => family(m.key) === 'sonnet').reduce((a, m) => a + m.cost, 0) : w.sonnet;
       const share = (v) => total ? pct0(v / total * 100) : '-';
-      const peak = w.official_peak;
+      const peak = (w.official_peak_trusted ?? true) ? w.official_peak : null;
       return `<div class="row week">
         <span class="strong">${md(new Date(w.start))} – ${md(new Date(w.end))}${cur ? ' <span class="muted" style="font-weight:400">本周</span>' : ''}</span>
         <span class="mono right">${axis(total)}</span>
@@ -554,8 +683,9 @@ function weeks(s) {
 }
 
 function method(s) {
-  const src = (m) => m.rate_source === 'fallback' ? '默认值' : '本周期校准';
-  $('method').textContent = '估算 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额。现在每周 1% ≈ ' + usd(s.weekly.dollars_per_pct) + '（' + src(s.weekly) + '），5 小时 1% ≈ ' + usd(s.five_hour.dollars_per_pct) + '（' + src(s.five_hour) + '）。';
+  const src = (m) => m.rate_source === 'calibrated' ? '按 ' + Math.round(m.calibration_pct) + ' 个点的官方读数校准' : '默认值，还没校准';
+  $('method').textContent = '估算 = 最近一次官方读数 + 之后的消耗 ÷ 每 1% 对应的金额：每周 ' + usd(s.weekly.dollars_per_pct) + '（' + src(s.weekly) + '），5 小时 ' + usd(s.five_hour.dollars_per_pct) + '（' + src(s.five_hour) + '）。'
+    + (s.weekly.effective_dollars_per_pct ? '本周的花费按 ' + usd(s.weekly.effective_dollars_per_pct) + ' = 1% 折算，加起来正好是估算。' : '');
 }
 
 function render(s) {
