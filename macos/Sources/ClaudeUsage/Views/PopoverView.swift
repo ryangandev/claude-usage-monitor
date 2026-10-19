@@ -61,11 +61,11 @@ struct PopoverView: View {
 
     private func fiveHour(_ u: Usage) -> some View {
         HStack(spacing: 12) {
-            Text(L("5 小时窗口", "5-hour window")).sub().frame(width: 76, alignment: .leading)
+            Text(L("5 小时窗口", "5-hour window")).sub().lineLimit(1).fixedSize().frame(width: 92, alignment: .leading)
             Meter(value: u.fiveHour / 100, color: u.fiveHourMatters ? Theme.warn : Theme.text.opacity(0.7), height: 4)
             Text(Fmt.pct(u.fiveHour)).font(.system(size: 12, weight: .semibold)).mono().frame(width: 34, alignment: .trailing)
             if let end = u.s.fiveHour.end {
-                Text(L("\(Fmt.time(end)) 重置", "resets \(Fmt.time(end))")).sub(11).mono()
+                Text(L("\(Fmt.time(end)) 重置", "resets \(Fmt.time(end))")).sub(11).mono().lineLimit(1).fixedSize()
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -102,7 +102,7 @@ struct PopoverView: View {
         let days = u.dailyPct
         let top = max(days.map { $0.opus + $0.other }.max() ?? 1, 1)
         return HStack(spacing: 12) {
-            Text(L("每天用量", "Daily use")).sub().frame(width: 76, alignment: .leading)
+            Text(L("每天用量", "Daily use")).sub().lineLimit(1).fixedSize().frame(width: 92, alignment: .leading)
             HStack(alignment: .bottom, spacing: 4) {
                 ForEach(Array(days.enumerated()), id: \.offset) { _, d in
                     let v = d.opus + d.other
@@ -189,8 +189,7 @@ struct PopoverView: View {
     private func provenance(_ u: Usage) -> String {
         var parts: [String] = []
         if let o = u.s.weekly.official, let age = u.officialAge {
-            let days = String(format: "%.1f", age / 86400)
-            parts.append(L("官方读数 \(Fmt.pct(o)) 是 \(days) 天前的", "Official reading \(Fmt.pct(o)) is \(days) days old"))
+            parts.append(L("官方读数 \(Fmt.pct(o)) 是 \(Fmt.age(age))前的", "Official reading \(Fmt.pct(o)) is \(Fmt.age(age)) old"))
         } else {
             parts.append(L("本周还没有官方读数", "No official reading this week"))
         }

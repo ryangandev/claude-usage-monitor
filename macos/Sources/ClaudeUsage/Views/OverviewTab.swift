@@ -54,8 +54,7 @@ struct OverviewTab: View {
 
     private var provenance: String {
         if let o = u.s.weekly.official, let age = u.officialAge {
-            let d = String(format: "%.1f", age / 86400)
-            return L("估算：官方 \(Fmt.pct(o))（\(d) 天前）加上之后的用量", "Estimate: official \(Fmt.pct(o)) (\(d) days ago) plus use since")
+            return L("估算：官方 \(Fmt.pct(o))（\(Fmt.age(age))前）加上之后的用量", "Estimate: official \(Fmt.pct(o)) (\(Fmt.age(age)) ago) plus use since")
         }
         return L("估算：本周还没有官方读数", "Estimate: no official reading this week")
     }

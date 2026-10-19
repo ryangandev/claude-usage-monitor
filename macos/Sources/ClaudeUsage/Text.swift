@@ -38,6 +38,14 @@ import Foundation
         return dayTime(d)
     }
 
+    /// How old something is: "35 分钟" or "35 min", then hours, then days to one decimal.
+    static func age(_ s: TimeInterval) -> String {
+        if s < 3600 { let m = max(1, Int(s / 60)); return L("\(m) 分钟", "\(m) min") }
+        if s < 86400 { let h = Int(s / 3600); return L("\(h) 小时", h == 1 ? "1 hour" : "\(h) hours") }
+        let d = String(format: "%.1f", s / 86400)
+        return L("\(d) 天", "\(d) days")
+    }
+
     /// "68 分钟" or "68 min", hours past two hours.
     static func duration(_ s: TimeInterval) -> String {
         let m = Int(s / 60)
