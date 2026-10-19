@@ -31,6 +31,8 @@ if [ "${1:-}" = "--install" ]; then
         echo "copied state.db into $SUPPORT"
     fi
     osascript -e 'tell application id "com.ryangan.claude-usage" to quit' 2>/dev/null || true
+    # A monitor left behind by an earlier copy would be reused and keep running the old monitor.py.
+    pkill -f "$DEST/Contents/Resources/monitor/monitor.py" 2>/dev/null || true
     sleep 1
     rm -rf "$DEST"
     cp -R "$APP" "$DEST"
