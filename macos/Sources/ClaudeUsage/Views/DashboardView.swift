@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// The full window: a sidebar of tabs and settings, and the chosen tab.
+/// The full window: a sidebar of tabs with a settings button, and the chosen tab.
 struct DashboardView: View {
     var monitor: Monitor
     var actions: AppActions
     @State private var settings = Settings.shared
     @State private var width: CGFloat = 1100
     @State private var loginOn = LoginItem.enabled
+    @State private var showSettings = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -47,6 +48,7 @@ struct DashboardView: View {
         // Login items can also change in System Settings, so read it again whenever the app comes forward.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in loginOn = LoginItem.enabled }
         .id(settings.isChinese)
+        .sheet(isPresented: $showSettings) { SettingsSheet(loginOn: $loginOn).id(settings.isChinese) }
     }
 
     // MARK: Sidebar
@@ -85,18 +87,18 @@ struct DashboardView: View {
 
             Spacer()
 
-            VStack(alignment: .leading, spacing: 10) {
-                Toggle(isOn: Binding(get: { loginOn }, set: { LoginItem.set($0); loginOn = LoginItem.enabled })) {
-                    Text(L("开机启动", "Open at login")).sub()
-                }
-                .toggleStyle(.switch).controlSize(.mini)
-                Text(L("外观", "Appearance")).sub(11)
-                Segmented(options: [(Appearance.system, L("系统", "System")), (.light, L("浅色", "Light")), (.dark, L("深色", "Dark"))],
-                          selection: $settings.appearance)
-                Text(L("语言", "Language")).sub(11)
-                Segmented(options: [(Language.system, L("系统", "System")), (.zh, "中文"), (.en, "English")], selection: $settings.language)
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape").font(.system(size: 14))
+                    .foregroundStyle(showSettings ? Theme.text : Theme.sub)
+                    .frame(width: 30, height: 30)
+                    .background(showSettings ? Theme.navOn : .clear, in: RoundedRectangle(cornerRadius: 7))
+                    .contentShape(Rectangle())
             }
-            .padding(.horizontal, 4)
+            .buttonStyle(Pressable())
+            .keyboardShortcut(",", modifiers: .command)
+            .help(L("设置 (⌘,)", "Settings (⌘,)"))
+            .accessibilityLabel(L("设置", "Settings"))
+            .padding(.leading, 2)
         }
         .padding(.horizontal, 10).padding(.bottom, 14)
         .frame(width: 228)
@@ -179,4 +181,65 @@ struct VisualEffect: NSViewRepresentable {
         return v
     }
     func updateNSView(_ v: NSVisualEffectView, context: Context) {}
+}
+
+/// Open at login, appearance and language, one row each, in a sheet on the dashboard window.
+struct SettingsSheet: View {
+    @Binding var loginOn: Bool
+    @State private var settings = Settings.shared
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(L("设置", "Settings")).font(.system(size: 15, weight: .semibold))
+                .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 6)
+            VStack(spacing: 0) {
+                row("power", Theme.live, L("开机启动", "Open at login")) {
+                    Toggle("", isOn: Binding(get: { loginOn }, set: { LoginItem.set($0); loginOn = LoginItem.enabled }))
+                        .toggleStyle(.switch).labelsHidden().tint(Theme.accent)
+                }
+                Divider().overlay(Theme.line)
+                row("circle.lefthalf.filled", Theme.accent, L("外观", "Appearance")) {
+                    Picker("", selection: $settings.appearance) {
+                        Text(L("跟随系统", "Match system")).tag(Appearance.system)
+                        Text(L("浅色", "Light")).tag(Appearance.light)
+                        Text(L("深色", "Dark")).tag(Appearance.dark)
+                    }
+                    .labelsHidden().frame(width: 140)
+                }
+                Divider().overlay(Theme.line)
+                row("globe", Color(light: 0x3B82C4, dark: 0x4A90D2), L("语言", "Language")) {
+                    Picker("", selection: $settings.language) {
+                        Text(L("跟随系统", "Match system")).tag(Language.system)
+                        Text("中文").tag(Language.zh)
+                        Text("English").tag(Language.en)
+                    }
+                    .labelsHidden().frame(width: 140)
+                }
+            }
+            .padding(.horizontal, 12).padding(.top, 6)
+            HStack(spacing: 12) {
+                Text(L("“跟随系统”随 macOS 的设置变化。", "Match system follows your macOS settings.")).sub()
+                Spacer()
+                Button(L("完成", "Done")) { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+            }
+            .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 18)
+        }
+        .frame(width: 460)
+        .foregroundStyle(Theme.text)
+    }
+
+    private func row(_ icon: String, _ tile: Color, _ title: String, @ViewBuilder control: () -> some View) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 13, weight: .medium)).foregroundStyle(.white)
+                .frame(width: 28, height: 28).background(tile, in: RoundedRectangle(cornerRadius: 7))
+                .accessibilityHidden(true)
+            Text(title).font(.system(size: 13))
+            Spacer()
+            control()
+        }
+        .padding(8).frame(minHeight: 52)
+    }
 }
