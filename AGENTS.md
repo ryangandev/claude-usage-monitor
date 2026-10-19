@@ -25,3 +25,4 @@ A localhost dashboard of Claude Code usage: `monitor.py` (scanner, estimates, HT
 - Bump `API_VERSION` in `monitor.py` when the state's shape changes, so the app stops reusing an older server.
 - The only write endpoint is `POST /api/reading`, and it requires the `X-Claude-Usage: 1` header so a web page cannot call it.
 - Update docs/README.md in the same commit as a change to how a number is computed.
+- The repository is public: screenshots in `docs/images/` must show made-up session, project and task names, never real ones.
