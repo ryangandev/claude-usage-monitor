@@ -49,9 +49,9 @@ def write_world(root):
     (agents / "agent-a1.jsonl").write_text("".join(
         call("s1", 100 + i, T0 + timedelta(days=2, minutes=10 * i), out=300_000) for i in range(4)))
     (agents / "agent-a1.meta.json").write_text(json.dumps({"description": "Write migration for orders", "agentType": "general-purpose", "effort": "xhigh"}))
-    (agents / "agent-a2.jsonl").write_text("".join(
+    (agents / "agent-a2a2a2a2a2a2a2a2a.jsonl").write_text("".join(
         call("s1", 200 + i, NOW - timedelta(minutes=40 - 8 * i), model="claude-sonnet-5-5", out=150_000) for i in range(5)))
-    (agents / "agent-a2.meta.json").write_text(json.dumps({"description": "Implement search filters", "agentType": "general-purpose", "effort": "high"}))
+    (agents / "agent-a2a2a2a2a2a2a2a2a.meta.json").write_text(json.dumps({"description": "Implement search filters", "agentType": "general-purpose", "effort": "high"}))
     # A subagent whose meta file is missing.
     (agents / "agent-a3.jsonl").write_text(call("s1", 300, T0 + timedelta(days=3), model="claude-haiku-5-5", out=20_000))
     # A busy hour just now in another session, so the week runs out early.
@@ -74,6 +74,24 @@ def write_world(root):
     claude_json = root / "claude.json"
     claude_json.write_text(json.dumps({"oauthAccount": {"organizationRateLimitTier": "default_claude_max_20x"}}))
     return projects, meter, root / "app" / "claude-code-sessions", claude_json
+
+
+def processes():
+    """What the process sampler would see: the app, session s1 with a subagent's tests in its worktree, a terminal session."""
+    mb, app, cli = 2**20, "/Applications/Claude.app/Contents/MacOS/Claude", "/Applications/claude-code/claude"
+    procs = {
+        10: (1, 420 * mb, 0, 0, app),
+        11: (10, 610 * mb, 0, 0, app + " Helper (Renderer)"),
+        21: (10, 230 * mb, 0, 0, f"{cli} --output-format stream-json --resume=s1-placeholder"),
+        30: (21, 2 * mb, 0, 0, "/bin/zsh -c pnpm test"),
+        31: (30, 880 * mb, 0, 0, "node test runner"),
+        40: (21, 3 * mb, 0, 0, "/bin/zsh -c git status"),
+        60: (1, 95 * mb, 0, 0, "claude"),
+    }
+    cpu = {10: 4.2, 11: 31.5, 21: 9.8, 30: 0.1, 31: 74.6, 40: 0.4, 60: 1.2}
+    cwds = {21: "/Users/me/acme-web", 30: "/Users/me/acme-web/.claude/worktrees/agent-a2a2a2a2a2a2a2a2a/web",
+            31: "/Users/me/acme-web/.claude/worktrees/agent-a2a2a2a2a2a2a2a2a/web", 40: "/Users/me/acme-web", 60: "/Users/me/notes"}
+    return procs, cpu, lambda pids: {p: cwds[p] for p in pids if p in cwds}
 
 
 @contextmanager
@@ -104,7 +122,11 @@ def fixture_state():
             store = monitor.Store(":memory:")
             monitor.scan_once(store, cfg, projects)
             monitor.add_reading(store, 27, now=NOW - timedelta(hours=3))
-            return monitor.build_state(store, cfg, now=NOW)
+            procs, cpu, cwds = processes()
+            resources = monitor.summarize_processes(procs, cpu, cwds, NOW, 8, 16 * 2**30, 11 * 2**30)
+            # The sampler reads full session ids from arguments; the fixture's transcripts use short ones.
+            next(r for r in resources["sessions"] if r["folder"] == "acme-web")["session"] = "s1"
+            return monitor.build_state(store, cfg, now=NOW, resources=resources)
         finally:
             monitor.PROJECTS, monitor.METER_FILE, monitor.APP_SESSIONS, monitor.CLAUDE_JSON = saved
             monitor._history_cache["value"] = None

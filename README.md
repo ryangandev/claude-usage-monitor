@@ -16,7 +16,7 @@ A local, live dashboard of Claude Code usage on a Mac.
 It tails Claude Code's transcripts into a SQLite store, reads the Claude app's sampled plan-usage meter, and serves a page at http://127.0.0.1:8765 that refreshes every 5 seconds.
 A native menu bar app runs it for you and shows the same numbers.
 
-Everything stays on your Mac: it reads local files, binds to 127.0.0.1 only, and never reads credentials.
+Everything stays on your Mac: it reads local files and process stats, binds to 127.0.0.1 only, and never reads credentials.
 It is an unofficial tool, not made by or affiliated with Anthropic.
 
 <p align="center">
@@ -70,6 +70,7 @@ Standard library only; Python 3.10 or later.
 - This week's cumulative use against time, with where the last hour's pace and the week's average would take it, daily and hourly spend by model family, and this window's spend by model and by effort.
 - Every subagent this window, active ones first, with model, effort, calls, current context size and spend, and the median a subagent of each model and effort costs.
 - Every session this week, active ones first, alone or grouped by project, and the last eight weeks side by side.
+- What each running session takes of this Mac's CPU and memory, split into its subagents' worktrees and the commands it runs, next to the Claude app itself.
 
 A weekly reading copied from claude.ai by hand ("Enter official reading" in the app) counts like one the Claude app sampled.
 

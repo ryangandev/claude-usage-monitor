@@ -68,6 +68,14 @@ import Foundation
         return f.string(from: NSNumber(value: v)) ?? "$\(v)"
     }
 
+    /// Percent of one core, as Activity Monitor shows it.
+    static func cpu(_ v: Double) -> String { v < 10 ? String(format: "%.1f%%", v) : String(format: "%.0f%%", v) }
+
+    /// "230 MB" or "1.2 GB".
+    static func bytes(_ v: Double) -> String {
+        v >= 1_073_741_824 ? String(format: "%.1f GB", v / 1_073_741_824) : String(format: "%.0f MB", v / 1_048_576)
+    }
+
     static func tokens(_ n: Int) -> String {
         n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : "\(n / 1000)k"
     }

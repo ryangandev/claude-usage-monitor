@@ -10,7 +10,7 @@ final class ContractTests: XCTestCase {
 
     func testTheServersStateDecodesWithEveryFieldTheAppUses() throws {
         let s = try UsageState.decode(Data(contentsOf: Self.fixture))
-        XCTAssertEqual(s.apiVersion, 2)
+        XCTAssertEqual(s.apiVersion, 3)
         // Optional only so an older server still decodes; the current one sends them all.
         XCTAssertNotNil(s.weekly.runsOutEarly)
         XCTAssertNotNil(s.weekly.burnPctPerHour)
@@ -23,6 +23,15 @@ final class ContractTests: XCTestCase {
         XCTAssertTrue(s.weeks.allSatisfy { $0.officialPeakTrusted != nil })
         // A subagent without a meta file has no description, and the app shows its own fallback.
         XCTAssertEqual(s.agents.filter { $0.description == nil }.map(\.agent), ["a3"])
+
+        // What the process sampler saw: the session with its worktree subagent, a terminal session without an id, the app.
+        let r = try XCTUnwrap(s.resources)
+        XCTAssertEqual(r.cores, 8)
+        XCTAssertEqual(r.sessions.map(\.title), ["Refactor billing service", "notes"])
+        XCTAssertEqual(r.sessions[0].agents.map(\.description), ["Implement search filters"])
+        XCTAssertEqual(r.sessions[0].agents[0].cpu, 74.7)
+        XCTAssertNil(r.sessions[1].session)
+        XCTAssertEqual(r.app.cpu, 35.7)
     }
 
     func testTheScreensReadTheFixtureAsTheServerMeantIt() throws {

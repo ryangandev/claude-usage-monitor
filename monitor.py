@@ -10,7 +10,9 @@ import bisect
 import glob
 import json
 import os
+import re
 import sqlite3
+import subprocess
 import threading
 import time
 from datetime import datetime, timedelta, timezone
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS readings (t TEXT PRIMARY KEY, sd REAL);
 """
 
 # Bumped when the state's shape changes, so the menu bar app can tell an old server from its own.
-API_VERSION = 2
+API_VERSION = 3
 
 
 class Store:
@@ -431,7 +433,176 @@ def week_curve(calls, w_start, now, scale):
         t += timedelta(hours=1)
 
 
-def build_state(store, cfg, now=None):
+# Processes: what each running session, and the subagents working in their own worktrees, cost this Mac.
+#
+# A session in the Claude app is one `claude` process started with `--resume=<session>`; the commands it runs
+# are its descendants. A subagent runs inside its session's process, so only the commands it runs can be told
+# apart, and only when they work in its worktree (`.claude/worktrees/agent-<id>`). Command lines can hold
+# secrets, so nothing of them leaves this file but session and agent ids and a folder name.
+SESSION_ARG = re.compile(r"--(?:resume|session-id)[= ]([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+CLAUDE_BIN = re.compile(r"(?:^|/)claude(?: |$)")
+WORKTREE_AGENT = re.compile(r"/\.claude/worktrees/agent-([0-9a-f]{17})(?:/|$)")
+CLAUDE_APP = "/Applications/Claude.app/Contents/MacOS/Claude"
+
+
+def parse_cputime(text):
+    """ps's cumulative CPU time, "[[dd-]hh:]mm:ss.ss", in seconds."""
+    days, _, rest = text.rpartition("-")
+    secs = 0.0
+    for part in rest.split(":"):
+        secs = secs * 60 + float(part)
+    return secs + (int(days) * 86400 if days else 0)
+
+
+def run(*cmd):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def read_processes():
+    """Every process as {pid: (ppid, rss bytes, cpu seconds, ps %cpu, command)}."""
+    procs = {}
+    for line in run("ps", "-axww", "-o", "pid=,ppid=,rss=,time=,%cpu=,command=").splitlines():
+        parts = line.split(None, 5)
+        if len(parts) < 6:
+            continue
+        try:
+            procs[int(parts[0])] = (int(parts[1]), int(parts[2]) * 1024, parse_cputime(parts[3]), float(parts[4]), parts[5])
+        except ValueError:
+            continue
+    return procs
+
+
+def read_cwds(pids):
+    if not pids:
+        return {}
+    cwds, pid = {}, None
+    for line in run("lsof", "-a", "-d", "cwd", "-Fpn", "-p", ",".join(map(str, pids))).splitlines():
+        if line.startswith("p"):
+            pid = int(line[1:])
+        elif line.startswith("n") and pid is not None:
+            cwds[pid] = line[1:]
+    return cwds
+
+
+def memory_used():
+    """Bytes in use the way Activity Monitor counts most of it: active, wired and compressed pages."""
+    out = run("vm_stat")
+    m = re.search(r"page size of (\d+) bytes", out)
+    if not m:
+        return None
+    pages = lambda name: int((re.search(name + r":\s+(\d+)", out) or [0, 0])[1])
+    return int(m[1]) * (pages("Pages active") + pages("Pages wired down") + pages("Pages occupied by compressor"))
+
+
+class ProcessSampler:
+    """Samples processes each scan. CPU is the CPU time used since the last sample, in percent of one core."""
+
+    def __init__(self):
+        self.prev, self.prev_at = {}, None
+        sysctl = run("sysctl", "-n", "hw.memsize", "hw.ncpu").split()
+        self.mem_total = int(sysctl[0]) if sysctl else None
+        self.cores = int(sysctl[1]) if len(sysctl) > 1 else 1
+
+    def sample(self, now=None):
+        at = time.monotonic()
+        procs = read_processes()
+        span = at - self.prev_at if self.prev_at else None
+        cpu = {}
+        for pid, (_, _, secs, ps_pct, _) in procs.items():
+            before = self.prev.get(pid)
+            cpu[pid] = max(0.0, (secs - before) / span * 100) if span and before is not None and before <= secs else ps_pct
+        self.prev, self.prev_at = {pid: v[2] for pid, v in procs.items()}, at
+        return summarize_processes(procs, cpu, read_cwds, now or datetime.now(timezone.utc),
+                                   self.cores, self.mem_total, memory_used())
+
+
+def summarize_processes(procs, cpu, cwds_of, now, cores, mem_total, mem_used):
+    children = {}
+    for pid, (ppid, *_rest) in procs.items():
+        children.setdefault(ppid, []).append(pid)
+
+    def subtree(root):
+        out, todo = [], list(children.get(root, []))
+        while todo:
+            pid = todo.pop()
+            out.append(pid)
+            todo.extend(children.get(pid, []))
+        return out
+
+    roots = []
+    for pid, (ppid, _, _, _, cmd) in procs.items():
+        head = cmd.split(" --", 1)[0]
+        if not CLAUDE_BIN.search(head) or "/Helpers/disclaimer" in head:
+            continue
+        m = SESSION_ARG.search(cmd)
+        # A terminal `claude` has no session id in its arguments; it is listed by its folder.
+        if m or head.endswith("claude"):
+            roots.append((pid, m[1] if m else None))
+    root_pids = {pid for pid, _ in roots}
+    # A session started from inside another session's shell is its own row, not a command of the outer one.
+    trees = {pid: [d for d in subtree(pid) if d not in root_pids and not any(a in root_pids for a in ancestors(procs, d, stop=pid))] for pid, _ in roots}
+    cwds = cwds_of(sorted({pid for tree in trees.values() for pid in tree} | root_pids))
+
+    sessions = []
+    for pid, sid in roots:
+        row = {"session": sid, "folder": os.path.basename(cwds.get(pid, "")) or None, "pid": pid,
+               "self_cpu": round(cpu.get(pid, 0), 1), "self_rss": procs[pid][1], "tools_cpu": 0.0, "tools_rss": 0, "tools": 0}
+        agents = {}
+        owner = {}
+        for d in sorted(trees[pid], key=lambda d: len(ancestors(procs, d, stop=pid))):
+            m = WORKTREE_AGENT.search(cwds.get(d, "")) or WORKTREE_AGENT.search(procs[d][4])
+            owner[d] = m[1] if m else owner.get(procs[d][0])
+            c, r = cpu.get(d, 0), procs[d][1]
+            if owner[d]:
+                a = agents.setdefault(owner[d], {"agent": owner[d], "cpu": 0.0, "rss": 0, "procs": 0})
+                a["cpu"] += c; a["rss"] += r; a["procs"] += 1
+            else:
+                row["tools_cpu"] += c; row["tools_rss"] += r; row["tools"] += 1
+        row["agents"] = sorted(({**a, "cpu": round(a["cpu"], 1)} for a in agents.values()), key=lambda a: (-a["cpu"], -a["rss"]))
+        row["tools_cpu"] = round(row["tools_cpu"], 1)
+        row["cpu"] = round(row["self_cpu"] + row["tools_cpu"] + sum(a["cpu"] for a in row["agents"]), 1)
+        row["rss"] = row["self_rss"] + row["tools_rss"] + sum(a["rss"] for a in row["agents"])
+        sessions.append(row)
+    sessions.sort(key=lambda r: (-r["cpu"], -r["rss"]))
+
+    in_sessions = {d for tree in trees.values() for d in tree} | root_pids
+    app_pids = set()
+    for pid, (_, _, _, _, cmd) in procs.items():
+        if cmd.startswith(CLAUDE_APP + " ") or cmd == CLAUDE_APP:
+            app_pids |= {pid, *subtree(pid)}
+    app_pids -= in_sessions
+    app = {"cpu": round(sum(cpu.get(d, 0) for d in app_pids), 1), "rss": sum(procs[d][1] for d in app_pids), "procs": len(app_pids)}
+    return {"sampled_at": iso(now), "cores": cores, "cpu_pct": round(sum(cpu.values()) / max(cores, 1), 1),
+            "mem_total": mem_total, "mem_used": mem_used, "app": app, "sessions": sessions}
+
+
+def ancestors(procs, pid, stop):
+    out, seen = [], set()
+    pid = procs[pid][0]
+    while pid in procs and pid != stop and pid not in seen:
+        seen.add(pid)
+        out.append(pid)
+        pid = procs[pid][0]
+    return out
+
+
+def describe_resources(res, titles, agent_meta, sessions_by_id):
+    """Names for the sampled processes: session titles and projects, subagent descriptions."""
+    if not res:
+        return None
+    rows = []
+    for r in res["sessions"]:
+        s = sessions_by_id.get(r["session"]) or {}
+        rows.append({**r, "title": titles.get(r["session"]) or s.get("title") or r["folder"] or (r["session"] or "")[:8] or None,
+                     "project": s.get("project") or r["folder"],
+                     "agents": [{**a, "description": (agent_meta.get(a["agent"]) or (None, None))[1]} for a in r["agents"]]})
+    return {**res, "sessions": rows}
+
+
+def build_state(store, cfg, now=None, resources=None):
     now = now or datetime.now(timezone.utc)
     with store.lock:
         rows = store.db.execute(
@@ -577,7 +748,11 @@ def build_state(store, cfg, now=None):
         "week_elapsed_days": round((now - w_start) / timedelta(days=1), 2),
         "daily_budget": round(w_rate * 100 / 7, 2),
         "weeks": weekly_history(store, cfg, samples, now, w_rate),
+        "resources": describe_resources(resources, titles, agent_meta, {s["session"]: s for s in session_list}),
     }
+
+
+_resources = {"value": None}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -611,7 +786,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/api/state":
-            body = json.dumps(build_state(self.store, self.cfg)).encode()
+            body = json.dumps(build_state(self.store, self.cfg, resources=_resources["value"])).encode()
             self.send(200, body, "application/json")
         elif self.path in ("/", "/index.html"):
             self.send(200, (ROOT / "static" / "index.html").read_bytes(), "text/html; charset=utf-8")
@@ -640,6 +815,8 @@ def main():
         print(json.dumps({k: s[k] for k in ("tier", "weekly", "five_hour", "burn_last_hour", "today")}, indent=2))
         return
 
+    sampler = ProcessSampler()
+
     def loop():
         while True:
             time.sleep(cfg["scan_seconds"])
@@ -647,6 +824,10 @@ def main():
                 scan_once(store, cfg)
             except Exception as exc:  # keep the server alive on a bad file
                 print(f"scan failed: {exc}", flush=True)
+            try:
+                _resources["value"] = sampler.sample()
+            except Exception as exc:  # the dashboard works without it
+                print(f"process sample failed: {exc}", flush=True)
 
     threading.Thread(target=loop, daemon=True).start()
     Handler.store, Handler.cfg = store, cfg

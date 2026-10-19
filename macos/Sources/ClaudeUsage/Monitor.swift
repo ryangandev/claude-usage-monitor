@@ -14,7 +14,7 @@ final class Monitor {
     private(set) var lastUpdate: Date?
     private(set) var problem: String?
 
-    static let apiVersion = 2
+    static let apiVersion = 3
     private let ports = [8765, 8766]
     private var port = 8765
     private var process: Process?

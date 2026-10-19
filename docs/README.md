@@ -9,6 +9,8 @@
   Weekly readings entered by hand go into the `readings` table and join these samples as weekly-only readings.
 - The plan tier: `oauthAccount.organizationRateLimitTier` in `~/.claude.json`.
 - Session titles: the app's `claude-code-sessions/.../local_*.json` (`cliSessionId` to `title`) and `custom-title.json` in a session folder.
+- Processes: `ps` for every process's parent, memory and CPU time, `lsof` for the working folders of Claude's processes, and `vm_stat` and `sysctl` for the Mac's memory and cores, sampled after each scan.
+  Command lines are only matched, never stored or served.
 
 ## Calls
 
@@ -41,6 +43,19 @@ The week's curve is the cumulative spend at the end of each hour since the reset
 
 A session is active when it made a call in the last 10 minutes; active sessions sort first, the rest by spend this week.
 For each model and effort, the typical cost of one subagent is the median spend of finished ones, since running ones have not spent everything yet.
+
+## This Mac
+
+Each Claude Code session is one `claude` process; the desktop app starts it with `--resume=<session id>`, and one started in a terminal without an id is listed by its folder.
+A session's processes are its own and every process below it, except another session nested inside it, which gets its own row.
+A process whose working folder is a subagent's worktree, `.claude/worktrees/agent-<id>`, counts for that subagent, and so does everything below it; the rest of the commands count as the session's commands.
+A subagent that works in the session's own folder cannot be told apart from its session, since subagents run inside the session's process, so it counts under the session.
+The Claude app is every process below the app except the sessions.
+
+CPU is CPU time used since the previous sample divided by the time between samples, in percent of one core, so 100% is one full core and a busy Mac can show more than 100% for one session.
+A process seen for the first time uses `ps`'s own average instead.
+The Mac's CPU is the sum over every process divided by the number of cores.
+Memory is resident memory summed over a session's processes, so memory shared between processes counts more than once; the Mac's memory in use is active, wired and compressed pages.
 
 ## Past weeks
 

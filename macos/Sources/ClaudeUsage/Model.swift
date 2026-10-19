@@ -21,6 +21,50 @@ struct UsageState: Decodable {
     var weeks: [Week]
     var weekCurve: [CurvePoint]?
     var lastCall: Date?
+    var resources: Resources?
+
+    /// What this Mac's processes cost: each running session with the subagents working in their worktrees and the commands it runs.
+    struct Resources: Decodable {
+        var sampledAt: Date
+        var cores: Int
+        var cpuPct: Double
+        var memTotal: Double?
+        var memUsed: Double?
+        var app: Usage
+        var sessions: [SessionProcess]
+
+        struct Usage: Decodable {
+            var cpu: Double
+            var rss: Double
+            var procs: Int
+        }
+
+        struct SessionProcess: Decodable, Identifiable {
+            var session: String?
+            var folder: String?
+            var pid: Int
+            var title: String?
+            var project: String?
+            var cpu: Double
+            var rss: Double
+            var selfCpu: Double
+            var selfRss: Double
+            var toolsCpu: Double
+            var toolsRss: Double
+            var tools: Int
+            var agents: [AgentProcess]
+            var id: Int { pid }
+        }
+
+        struct AgentProcess: Decodable, Identifiable {
+            var agent: String
+            var description: String?
+            var cpu: Double
+            var rss: Double
+            var procs: Int
+            var id: String { agent }
+        }
+    }
 
     struct Meter: Decodable {
         var official: Double?

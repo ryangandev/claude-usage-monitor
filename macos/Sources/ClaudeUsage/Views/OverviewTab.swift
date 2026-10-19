@@ -17,6 +17,7 @@ struct OverviewTab: View {
                 burningAgents
                 burningSessions
             }
+            if let r = u.s.resources { MachineCard(r: r) }
         }
     }
 

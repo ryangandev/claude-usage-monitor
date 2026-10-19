@@ -39,7 +39,7 @@
  "agents": [
   {
    "active": true,
-   "agent": "a2",
+   "agent": "a2a2a2a2a2a2a2a2a",
    "calls": 5,
    "context": 52010,
    "cost": 7.58,
@@ -118,7 +118,7 @@
    "total": 6.05
   }
  ],
- "api_version": 2,
+ "api_version": 3,
  "burn_last_hour": 95.8,
  "daily_budget": 335.71,
  "five_hour": {
@@ -521,6 +521,58 @@
  ],
  "last_call": "2026-10-18T21:25:00Z",
  "now": "2026-10-18T21:30:00Z",
+ "resources": {
+  "app": {
+   "cpu": 35.7,
+   "procs": 2,
+   "rss": 1080033280
+  },
+  "cores": 8,
+  "cpu_pct": 15.2,
+  "mem_total": 17179869184,
+  "mem_used": 11811160064,
+  "sampled_at": "2026-10-18T21:30:00Z",
+  "sessions": [
+   {
+    "agents": [
+     {
+      "agent": "a2a2a2a2a2a2a2a2a",
+      "cpu": 74.7,
+      "description": "Implement search filters",
+      "procs": 2,
+      "rss": 924844032
+     }
+    ],
+    "cpu": 84.9,
+    "folder": "acme-web",
+    "pid": 21,
+    "project": "acme-web",
+    "rss": 1169162240,
+    "self_cpu": 9.8,
+    "self_rss": 241172480,
+    "session": "s1",
+    "title": "Refactor billing service",
+    "tools": 1,
+    "tools_cpu": 0.4,
+    "tools_rss": 3145728
+   },
+   {
+    "agents": [],
+    "cpu": 1.2,
+    "folder": "notes",
+    "pid": 60,
+    "project": "notes",
+    "rss": 99614720,
+    "self_cpu": 1.2,
+    "self_rss": 99614720,
+    "session": null,
+    "title": "notes",
+    "tools": 0,
+    "tools_cpu": 0.0,
+    "tools_rss": 0
+   }
+  ]
+ },
  "sessions": [
   {
    "active": true,

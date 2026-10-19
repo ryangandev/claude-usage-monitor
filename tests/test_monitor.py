@@ -144,6 +144,59 @@ class ReadingTest(unittest.TestCase):
         self.assertEqual((m["official"], m["estimate"]), (30, 32.0))
 
 
+
+class ProcessTest(unittest.TestCase):
+    APP = "/Applications/Claude.app/Contents/MacOS/Claude"
+    CLI = "/Users/x/Library/Application Support/Claude/claude-code/2.1/claude.app/Contents/MacOS/claude"
+    S1, S2 = "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"
+
+    def summary(self):
+        mb = 2**20
+        procs = {  # pid: (ppid, rss, cpu seconds, ps %cpu, command)
+            10: (1, 300 * mb, 0, 0, self.APP),
+            11: (10, 500 * mb, 0, 0, self.APP.replace("MacOS/Claude", "Frameworks/Claude Helper (Renderer)")),
+            20: (10, 1 * mb, 0, 0, f"/Applications/Claude.app/Contents/Helpers/disclaimer --pgroup -- {self.CLI} --resume={self.S1}"),
+            21: (20, 200 * mb, 0, 0, f"{self.CLI} --output-format stream-json --resume={self.S1} --model=claude-opus-5-5"),
+            30: (21, 2 * mb, 0, 0, "/bin/zsh -c pnpm test"),
+            31: (30, 900 * mb, 0, 0, "node playwright test"),
+            40: (21, 2 * mb, 0, 0, "/bin/zsh -c git status"),
+            50: (40, 150 * mb, 0, 0, f"claude -p review --session-id {self.S2}"),
+            60: (1, 80 * mb, 0, 0, "claude"),
+        }
+        cpu = {10: 5, 11: 40, 21: 12, 30: 0, 31: 80, 40: 1, 50: 3, 60: 2}
+        cwds = {21: "/Users/x/proj", 30: "/Users/x/proj/.claude/worktrees/agent-a1f84a2960a626440/web", 31: "/Users/x/proj/.claude/worktrees/agent-a1f84a2960a626440/web",
+                40: "/Users/x/proj", 50: "/Users/x/proj", 60: "/Users/x/notes"}
+        now = datetime(2026, 10, 19, tzinfo=timezone.utc)
+        return monitor.summarize_processes(procs, cpu, lambda pids: {p: cwds[p] for p in pids if p in cwds}, now, 4, 16 * 2**30, 9 * 2**30)
+
+    def test_each_session_counts_its_commands_and_the_subagents_working_in_their_worktrees(self):
+        rows = {r["session"]: r for r in self.summary()["sessions"]}
+        s1 = rows[self.S1]
+        self.assertEqual((s1["self_cpu"], s1["tools"], s1["tools_cpu"]), (12, 1, 1))
+        self.assertEqual([(a["agent"], a["cpu"], a["procs"]) for a in s1["agents"]], [("a1f84a2960a626440", 80, 2)])
+        self.assertEqual(s1["cpu"], 93)
+        self.assertEqual(s1["folder"], "proj")
+
+    def test_a_session_started_from_another_sessions_shell_is_its_own_row(self):
+        rows = {r["session"]: r for r in self.summary()["sessions"]}
+        self.assertEqual(rows[self.S2]["cpu"], 3)
+        self.assertNotIn(50, [a for a in rows[self.S1]["agents"]])
+        self.assertEqual(rows[self.S1]["rss"], (200 + 2 + 900 + 2) * 2**20)
+
+    def test_a_terminal_session_is_listed_by_its_folder_and_the_app_by_itself(self):
+        r = self.summary()
+        terminal = [s for s in r["sessions"] if s["session"] is None]
+        self.assertEqual([(s["folder"], s["cpu"]) for s in terminal], [("notes", 2)])
+        # The app without its sessions; the disclaimer wrapper counts as the app's.
+        self.assertEqual((r["app"]["cpu"], r["app"]["procs"]), (45, 3))
+        self.assertEqual(r["cpu_pct"], round((5 + 40 + 12 + 80 + 1 + 3 + 2) / 4, 1))
+
+    def test_cpu_time_parses_every_ps_form(self):
+        self.assertEqual(monitor.parse_cputime("0:01.50"), 1.5)
+        self.assertEqual(monitor.parse_cputime("12:00.00"), 720)
+        self.assertEqual(monitor.parse_cputime("1-02:00:00"), 93600)
+
+
 class ContractTest(unittest.TestCase):
     def test_the_state_the_app_decodes_is_what_build_state_serves(self):
         import fixture

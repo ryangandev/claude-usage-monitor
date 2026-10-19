@@ -120,7 +120,8 @@ h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.
 .track .tick { position: absolute; top: -3px; width: 2px; height: 10px; margin-left: -1px; border-radius: 1px; background: var(--text); }
 
 .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.section-head .title { display: flex; align-items: baseline; gap: 10px; }
+.section-head .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.section-head h2 { white-space: nowrap; }
 h2 { font-size: 14px; font-weight: 600; }
 .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
@@ -177,6 +178,9 @@ h2 { font-size: 14px; font-weight: 600; }
 .row.week { grid-template-columns: minmax(0, 1fr) 84px 72px 72px 168px; }
 .row.session { grid-template-columns: 8px minmax(0, 1fr) 120px 64px 76px 76px 80px; }
 .row.project { grid-template-columns: 8px minmax(0, 1fr) 120px 64px 76px 76px 80px; }
+.row.proc { grid-template-columns: 8px minmax(0, 1fr) 64px 80px; }
+.row.proc.child { height: 30px; padding-left: 30px; grid-template-columns: minmax(0, 1fr) 64px 80px; color: var(--muted); font-size: 12px; border-bottom-style: dashed; }
+.app-dot { width: 7px; height: 7px; border-radius: 2px; border: 1px solid var(--muted); box-sizing: border-box; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 .row.header { height: 32px; color: var(--muted); font-size: 12px; }
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -213,6 +217,8 @@ footer p { margin: 0; }
   .effort { grid-template-columns: 112px minmax(0, 1fr) 56px 44px; }
   .plot.days, .xlabels { gap: 4px; }
   .yaxis { width: 44px; }
+  .row.proc { grid-template-columns: 8px minmax(0, 1fr) 48px 60px; gap: 10px; }
+  .row.proc.child { padding-left: 28px; grid-template-columns: minmax(0, 1fr) 48px 60px; }
 }
 </style>
 </head>
@@ -312,6 +318,12 @@ footer p { margin: 0; }
             <div id="models"></div>
           </section>
         </div>
+
+        <section id="machine" hidden>
+          <div class="section-head"><div class="title"><h2 data-en="This Mac">本机占用</h2><span class="muted mono" id="machine-caption"></span></div></div>
+          <div class="table" style="overflow:visible"><div id="machine-rows"></div></div>
+          <div class="note" data-en="CPU is per core: 100% is one full core. A subagent counts on its own only for commands it runs in its worktree; the rest counts under its session.">CPU 按单核算，100% 是占满一个核。子代理只有在自己的 worktree 里跑的命令能单独算出来，其余算在会话里。</div>
+        </section>
 
         <section id="agents">
           <div class="section-head"><div class="title"><h2 data-en="Subagents">子代理</h2><span class="muted" id="agents-caption"></span></div></div>
@@ -767,8 +779,40 @@ function method(s) {
       + (w.effective_dollars_per_pct ? " This week's spend is shared out at " + usd(w.effective_dollars_per_pct) + ' = 1%, which adds up to the estimate.' : ''));
 }
 
+// Percent of one core, as Activity Monitor shows it.
+const cpu = (v) => (v < 10 ? v.toFixed(1) : Math.round(v)) + '%';
+const bytes = (v) => v >= 2 ** 30 ? (v / 2 ** 30).toFixed(1) + ' GB' : Math.round(v / 2 ** 20) + ' MB';
+
+function machine(s) {
+  const r = s.resources;
+  $('machine').hidden = !r;
+  if (!r) return;
+  const parts = ['CPU ' + Math.round(r.cpu_pct) + '%'];
+  if (r.mem_used != null && r.mem_total != null) parts.push(L('内存 ', 'Memory ') + (r.mem_used / 2 ** 30).toFixed(1) + ' / ' + Math.round(r.mem_total / 2 ** 30) + ' GB');
+  parts.push(L(r.cores + ' 核', r.cores + ' cores'));
+  $('machine-caption').textContent = parts.join(' · ');
+  const nums = (c, m) => `<span class="mono right">${cpu(c)}</span><span class="mono right muted">${bytes(m)}</span>`;
+  const child = (title, c, m) => `<div class="row proc child"><span class="ellipsis">${esc(title)}</span>${nums(c, m)}</div>`;
+  const rows = r.sessions.map((x) => {
+    const title = x.session == null ? (x.folder ?? '?') + L(' · 未识别的会话', ' · unidentified session') : (x.title ?? x.session.slice(0, 8));
+    let out = `<div class="row proc">
+      ${x.cpu >= 1 ? '<span class="live-dot"></span>' : '<span></span>'}
+      <span class="ellipsis strong">${esc(title)}${x.session != null && x.project ? ` <span class="muted" style="font-weight:400">· ${esc(x.project)}</span>` : ''}</span>
+      ${nums(x.cpu, x.rss)}
+    </div>`;
+    if (x.agents.length || x.tools) {
+      out += child(L('会话本身', 'The session itself'), x.self_cpu, x.self_rss);
+      out += x.agents.map((a) => child(L('子代理 · ', 'Subagent · ') + (a.description ?? L('（无描述）', '(no description)')), a.cpu, a.rss)).join('');
+      if (x.tools) out += child(L('命令 · ' + x.tools + ' 个进程', 'Commands · ' + x.tools + (x.tools > 1 ? ' processes' : ' process')), x.tools_cpu, x.tools_rss);
+    }
+    return out;
+  });
+  rows.push(`<div class="row proc"><span class="app-dot"></span><span class="ellipsis strong">${L('Claude 应用', 'Claude app')} <span class="muted" style="font-weight:400">· ${L(r.app.procs + ' 个进程', r.app.procs + ' processes')}</span></span>${nums(r.app.cpu, r.app.rss)}</div>`);
+  $('machine-rows').innerHTML = `<div class="row proc header"><span></span><span>${L('进程', 'Process')}</span><span class="right">CPU</span><span class="right">${L('内存', 'Memory')}</span></div>` + rows.join('');
+}
+
 function render(s) {
-  header(s); kpis(s); chart(s); breakdown(s); agents(s); sessions(s); weeks(s); method(s);
+  header(s); kpis(s); chart(s); breakdown(s); machine(s); agents(s); sessions(s); weeks(s); method(s);
   markSection();
 }
 
