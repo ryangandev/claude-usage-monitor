@@ -118,5 +118,12 @@ class ReadingTest(unittest.TestCase):
         self.assertEqual((m["official"], m["estimate"]), (30, 32.0))
 
 
+class ContractTest(unittest.TestCase):
+    def test_the_state_the_app_decodes_is_what_build_state_serves(self):
+        import fixture
+        self.assertEqual(fixture.FIXTURE.read_text(), fixture.render(fixture.fixture_state()),
+                         "the state changed: run python3 tests/fixture.py, then swift test in macos/")
+
+
 if __name__ == "__main__":
     unittest.main()
