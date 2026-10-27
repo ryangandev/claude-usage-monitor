@@ -181,13 +181,16 @@ h2 { font-size: 14px; font-weight: 600; }
 .row.proc { grid-template-columns: 8px minmax(0, 1fr) 64px 80px; }
 .row.proc.child { height: 30px; padding-left: 30px; grid-template-columns: minmax(0, 1fr) 64px 80px; color: var(--muted); font-size: 12px; border-bottom-style: dashed; }
 .app-dot { width: 7px; height: 7px; border-radius: 2px; border: 1px solid var(--muted); box-sizing: border-box; }
-.row.session.opens { cursor: pointer; }
-.row.session .name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.row.opens { cursor: pointer; }
+.row.open { background: var(--active); }
+.row .name { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .chev { flex: none; width: 10px; height: 10px; color: var(--muted); transition: transform 150ms var(--ease-out); }
 .chev.open { transform: rotate(90deg); }
-.row.session.open { background: var(--active); }
+.row.project.child .name { padding-left: 16px; }
+.row.project.child .strong { font-weight: 400; }
+.row.project.sub-agent .name { padding-left: 32px; }
 .row.sub-agent { height: 34px; font-size: 12px; background: color-mix(in srgb, var(--active) 45%, transparent); }
-.row.sub-agent .name { padding-left: 16px; }
+.row.session.sub-agent .name { padding-left: 16px; }
 .row.sub-agent .chip { height: 20px; }
 .row.sub-more { display: block; height: auto; padding: 8px 10px 8px 52px; font-size: 12px; color: var(--muted); }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
@@ -488,13 +491,13 @@ $('group-seg').addEventListener('click', (e) => {
   if (last) sessions(last);
 });
 let showAllSessions = false;
-// Sessions opened to show their subagents.
-const openSessions = new Set();
+// Projects opened to show their sessions ("p:<name>"), and sessions opened to show their subagents ("s:<id>").
+const openRows = new Set();
 $('session-rows').addEventListener('click', (e) => {
   const row = e.target.closest('.row.opens');
   if (!row) return;
-  const id = row.dataset.session;
-  if (!openSessions.delete(id)) openSessions.add(id);
+  const id = row.dataset.open;
+  if (!openRows.delete(id)) openRows.add(id);
   if (last) sessions(last);
 });
 $('session-rows').addEventListener('keydown', (e) => {
@@ -727,6 +730,25 @@ function sessions(s) {
   const live = u.sessions.filter(u.isActive).length;
   $('nav-sessions').textContent = u.sessions.length || '';
   let rows, head, count;
+  const chev = (open) => `<svg class="chev${open ? ' open' : ''}" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const took = (a) => { const m = Math.floor((new Date(a.last) - new Date(a.first)) / 60000); return m < 120 ? L(m + ' 分钟', m + ' min') : L(Math.floor(m / 60) + ' 小时', Math.floor(m / 60) + ' h'); };
+  const bySession = new Map();
+  for (const a of s.agents) if (a.session) bySession.set(a.session, [...(bySession.get(a.session) || []), a]);
+  const subRows = (x, kind) => {
+    const list = (bySession.get(x.session) || []).sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.cost - a.cost);
+    return list.map((a) => `
+  <div class="row ${kind} sub-agent">
+    <span></span>
+    <span class="name">${a.active ? LIVE_ICON() : DONE_ICON()}<span class="ellipsis">${esc(a.description ?? L('（无描述）', '(no description)'))} <span class="muted">· ${a.active ? L('运行中 · 已跑 ' + took(a), 'running · ' + took(a) + ' so far') : L('已完成 · 用时 ' + took(a), 'done · took ' + took(a))}</span></span></span>
+    <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
+    <span class="mono right muted" title="${L('当前上下文', 'Current context')}">${compact(a.context)}</span>
+    <span></span>
+    <span class="mono right">${usd(a.cost)}</span>
+    <span class="right ${a.active ? '' : 'muted'}">${ago(a.last, now)}</span>
+  </div>`).join('') + (list.length < x.agents ? `<div class="row sub-more"${kind === 'project' ? ' style="padding-left:68px"' : ''}>${L('还有 ' + (x.agents - list.length) + ' 个子代理没列出，在子代理一节看全部。', (x.agents - list.length) + ' more not listed here; the subagents section has them all.')}</div>` : '');
+  };
+  // A session with subagents opens to show them.
+  const opener = (key, open) => ` opens${open ? ' open' : ''}" data-open="${esc(key)}" role="button" tabindex="0" aria-expanded="${open}`;
   if (group === 'project') {
     const byName = new Map();
     for (const x of u.sessions) byName.set(x.project, [...(byName.get(x.project) || []), x]);
@@ -734,43 +756,42 @@ function sessions(s) {
     const projects = [...byName].map(([name, list]) => ({name, list, active: list.some(u.isActive), total: sum(list, 'total')}))
       .sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.total - a.total);
     count = projects.length;
-    $('sessions-caption').textContent = L('本周 ' + count + ' 个项目 · 有绿点的最近 10 分钟有动静', count + ' projects this week · a green dot means activity in the last 10 minutes');
+    $('sessions-caption').textContent = L('本周 ' + count + ' 个项目 · 有绿点的最近 10 分钟有动静 · 点项目展开看会话', count + ' projects this week · a green dot means activity in the last 10 minutes · click a project to see its sessions');
     head = `<div class="row project header"><span></span><span>${L('项目', 'Project')}</span><span class="right">${L('会话', 'Sessions')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">${L('主会话', 'Main')}</span><span class="right">${L('合计', 'Total')}</span><span class="right">${L('最后活动', 'Last')}</span></div>`;
-    rows = projects.map((p) => `
-    <div class="row project">
+    rows = projects.map((p) => {
+      const open = openRows.has('p:' + p.name);
+      const children = open ? p.list.map((x) => {
+        const opens = x.agents > 0 && x.session, sOpen = opens && openRows.has('s:' + x.session);
+        return `
+    <div class="row project child${opens ? opener('s:' + x.session, sOpen) : ''}">
+      ${dot(u.isActive(x))}
+      <span class="name">${opens ? chev(sOpen) : '<span class="chev"></span>'}<span class="ellipsis strong">${esc(x.title)}${running(x.running)}</span></span>
+      <span></span>
+      <span class="mono right muted">${x.agents}</span>
+      <span class="mono right muted">${usd(x.main)}</span>
+      <span class="mono right">${usd(x.total)}</span>
+      <span class="right muted">${ago(x.last, now)}</span>
+    </div>` + (sOpen ? subRows(x, 'project') : '');
+      }).join('') : '';
+      return `
+    <div class="row project${opener('p:' + p.name, open)}">
       ${dot(p.active)}
-      <span class="ellipsis strong">${esc(p.name)}${running(sum(p.list, 'running'))}</span>
+      <span class="name">${chev(open)}<span class="ellipsis strong">${esc(p.name)}${running(sum(p.list, 'running'))}</span></span>
       <span class="mono right muted">${p.list.length}</span>
       <span class="mono right muted">${sum(p.list, 'agents')}</span>
       <span class="mono right muted">${usd(p.total - sum(p.list, 'sub'))}</span>
       <span class="mono right">${usd(p.total)}</span>
       <span class="right muted">${ago(p.list.map((x) => x.last).sort().pop(), now)}</span>
-    </div>`);
+    </div>` + children;
+    });
   } else {
     count = u.sessions.length;
     $('sessions-caption').textContent = L('本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前 · 点有子代理的会话展开看', count + ' this week · ' + live + ' active, listed first · click a session with subagents to see them');
     head = `<div class="row session header"><span></span><span>${L('会话', 'Session')}</span><span>${L('项目', 'Project')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">${L('主会话', 'Main')}</span><span class="right">${L('合计', 'Total')}</span><span class="right">${L('最后活动', 'Last')}</span></div>`;
-    const chev = (open) => `<svg class="chev${open ? ' open' : ''}" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    const took = (a) => { const m = Math.floor((new Date(a.last) - new Date(a.first)) / 60000); return m < 120 ? L(m + ' 分钟', m + ' min') : L(Math.floor(m / 60) + ' 小时', Math.floor(m / 60) + ' h'); };
-    const bySession = new Map();
-    for (const a of s.agents) if (a.session) bySession.set(a.session, [...(bySession.get(a.session) || []), a]);
-    const subRows = (x) => {
-      const list = (bySession.get(x.session) || []).sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.cost - a.cost);
-      return list.map((a) => `
-    <div class="row session sub-agent">
-      <span></span>
-      <span class="name">${a.active ? LIVE_ICON() : DONE_ICON()}<span class="ellipsis">${esc(a.description ?? L('（无描述）', '(no description)'))} <span class="muted">· ${a.active ? L('运行中 · 已跑 ' + took(a), 'running · ' + took(a) + ' so far') : L('已完成 · 用时 ' + took(a), 'done · took ' + took(a))}</span></span></span>
-      <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
-      <span class="mono right muted" title="${L('当前上下文', 'Current context')}">${compact(a.context)}</span>
-      <span></span>
-      <span class="mono right">${usd(a.cost)}</span>
-      <span class="right ${a.active ? '' : 'muted'}">${ago(a.last, now)}</span>
-    </div>`).join('') + (list.length < x.agents ? `<div class="row sub-more">${L('还有 ' + (x.agents - list.length) + ' 个子代理没列出，在子代理一节看全部。', (x.agents - list.length) + ' more not listed here; the subagents section has them all.')}</div>` : '');
-    };
     rows = u.sessions.map((x) => {
-      const opens = x.agents > 0 && x.session, open = opens && openSessions.has(x.session);
+      const opens = x.agents > 0 && x.session, open = opens && openRows.has('s:' + x.session);
       return `
-    <div class="row session${opens ? ' opens' : ''}${open ? ' open' : ''}"${opens ? ` data-session="${esc(x.session)}" role="button" tabindex="0" aria-expanded="${open}"` : ''}>
+    <div class="row session${opens ? opener('s:' + x.session, open) : ''}">
       ${dot(u.isActive(x))}
       <span class="name">${opens ? chev(open) : '<span class="chev"></span>'}<span class="ellipsis strong">${esc(x.title)}${running(x.running)}</span></span>
       <span class="ellipsis muted">${esc(x.project)}</span>
@@ -778,7 +799,7 @@ function sessions(s) {
       <span class="mono right muted">${usd(x.main)}</span>
       <span class="mono right">${usd(x.total)}</span>
       <span class="right muted">${ago(x.last, now)}</span>
-    </div>` + (open ? subRows(x) : '');
+    </div>` + (open ? subRows(x, 'session') : '');
     });
   }
   const shown = showAllSessions ? rows : rows.slice(0, 20);
