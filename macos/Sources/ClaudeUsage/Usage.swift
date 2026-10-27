@@ -55,6 +55,12 @@ struct Usage {
 
     var running: [UsageState.Agent] { s.agents.filter(\.active).sorted { $0.cost > $1.cost } }
 
+    /// Each session's subagents this week, running ones first, then by quota used.
+    var agentsBySession: [String: [UsageState.Agent]] {
+        Dictionary(grouping: s.agents.filter { $0.session != nil }, by: { $0.session! })
+            .mapValues { $0.sorted { a, b in a.active != b.active ? a.active : a.cost > b.cost } }
+    }
+
     var sessions: [UsageState.Session] {
         (s.allSessions.flatMap { $0.isEmpty ? nil : $0 } ?? s.sessions).sorted { a, b in
             let aa = isActive(a), ba = isActive(b)

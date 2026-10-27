@@ -69,7 +69,7 @@ Standard library only; Python 3.10 or later.
 - Spend in the last hour, today and this limit window, and the share spent by subagents.
 - This week's cumulative use against time, with where the last hour's pace and the week's average would take it, daily and hourly spend by model family, and this window's spend by model and by effort.
 - Every subagent this window, active ones first, with model, effort, calls, current context size and spend, and the median a subagent of each model and effort costs.
-- Every session this week, active ones first, alone or grouped by project, and the last eight weeks side by side.
+- Every session this week, active ones first, alone or grouped by project; a session opens to show its subagents and whether each is still running. And the last eight weeks side by side.
 - What each running session takes of this Mac's CPU and memory, split into its subagents' worktrees and the commands it runs, next to the Claude app itself.
 
 A weekly reading copied from claude.ai by hand ("Enter official reading" in the app) counts like one the Claude app sampled.

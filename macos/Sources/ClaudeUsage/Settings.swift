@@ -18,6 +18,8 @@ final class Settings {
     var tab: Tab { didSet { defaults.set(tab.rawValue, forKey: "tab") } }
     var grouping: SessionGrouping { didSet { defaults.set(grouping.rawValue, forKey: "grouping") } }
     var expandedProjects: Set<String> { didSet { defaults.set(Array(expandedProjects), forKey: "expandedProjects") } }
+    /// Sessions opened to show their subagents; not kept, since session ids come and go.
+    var expandedSessions: Set<String> = []
     var chart: ChartView { didSet { defaults.set(chart.rawValue, forKey: "chart") } }
     var iconOnly: Bool { didSet { defaults.set(iconOnly, forKey: "iconOnly") } }
 

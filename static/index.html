@@ -181,6 +181,15 @@ h2 { font-size: 14px; font-weight: 600; }
 .row.proc { grid-template-columns: 8px minmax(0, 1fr) 64px 80px; }
 .row.proc.child { height: 30px; padding-left: 30px; grid-template-columns: minmax(0, 1fr) 64px 80px; color: var(--muted); font-size: 12px; border-bottom-style: dashed; }
 .app-dot { width: 7px; height: 7px; border-radius: 2px; border: 1px solid var(--muted); box-sizing: border-box; }
+.row.session.opens { cursor: pointer; }
+.row.session .name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.chev { flex: none; width: 10px; height: 10px; color: var(--muted); transition: transform 150ms var(--ease-out); }
+.chev.open { transform: rotate(90deg); }
+.row.session.open { background: var(--active); }
+.row.sub-agent { height: 34px; font-size: 12px; background: color-mix(in srgb, var(--active) 45%, transparent); }
+.row.sub-agent .name { padding-left: 16px; }
+.row.sub-agent .chip { height: 20px; }
+.row.sub-more { display: block; height: auto; padding: 8px 10px 8px 52px; font-size: 12px; color: var(--muted); }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 .row.header { height: 32px; color: var(--muted); font-size: 12px; }
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -479,6 +488,18 @@ $('group-seg').addEventListener('click', (e) => {
   if (last) sessions(last);
 });
 let showAllSessions = false;
+// Sessions opened to show their subagents.
+const openSessions = new Set();
+$('session-rows').addEventListener('click', (e) => {
+  const row = e.target.closest('.row.opens');
+  if (!row) return;
+  const id = row.dataset.session;
+  if (!openSessions.delete(id)) openSessions.add(id);
+  if (last) sessions(last);
+});
+$('session-rows').addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.row.opens')) { e.preventDefault(); e.target.click(); }
+});
 $('sessions-more').addEventListener('click', () => { showAllSessions = !showAllSessions; if (last) sessions(last); });
 
 let showAllAgents = false;
@@ -727,18 +748,38 @@ function sessions(s) {
     </div>`);
   } else {
     count = u.sessions.length;
-    $('sessions-caption').textContent = L('本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前', count + ' this week · ' + live + ' active, listed first');
+    $('sessions-caption').textContent = L('本周 ' + count + ' 个 · ' + live + ' 个进行中，排最前 · 点有子代理的会话展开看', count + ' this week · ' + live + ' active, listed first · click a session with subagents to see them');
     head = `<div class="row session header"><span></span><span>${L('会话', 'Session')}</span><span>${L('项目', 'Project')}</span><span class="right">${L('子代理', 'Subagents')}</span><span class="right">${L('主会话', 'Main')}</span><span class="right">${L('合计', 'Total')}</span><span class="right">${L('最后活动', 'Last')}</span></div>`;
-    rows = u.sessions.map((x) => `
-    <div class="row session">
+    const chev = (open) => `<svg class="chev${open ? ' open' : ''}" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const took = (a) => { const m = Math.floor((new Date(a.last) - new Date(a.first)) / 60000); return m < 120 ? L(m + ' 分钟', m + ' min') : L(Math.floor(m / 60) + ' 小时', Math.floor(m / 60) + ' h'); };
+    const bySession = new Map();
+    for (const a of s.agents) if (a.session) bySession.set(a.session, [...(bySession.get(a.session) || []), a]);
+    const subRows = (x) => {
+      const list = (bySession.get(x.session) || []).sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : b.cost - a.cost);
+      return list.map((a) => `
+    <div class="row session sub-agent">
+      <span></span>
+      <span class="name">${a.active ? LIVE_ICON() : DONE_ICON()}<span class="ellipsis">${esc(a.description ?? L('（无描述）', '(no description)'))} <span class="muted">· ${a.active ? L('运行中 · 已跑 ' + took(a), 'running · ' + took(a) + ' so far') : L('已完成 · 用时 ' + took(a), 'done · took ' + took(a))}</span></span></span>
+      <span class="chip"><i style="background:var(--${family(a.model)})"></i>${esc(modelName(a.model))}<span class="muted">${esc(a.effort)}</span></span>
+      <span class="mono right muted" title="${L('当前上下文', 'Current context')}">${compact(a.context)}</span>
+      <span></span>
+      <span class="mono right">${usd(a.cost)}</span>
+      <span class="right ${a.active ? '' : 'muted'}">${ago(a.last, now)}</span>
+    </div>`).join('') + (list.length < x.agents ? `<div class="row sub-more">${L('还有 ' + (x.agents - list.length) + ' 个子代理没列出，在子代理一节看全部。', (x.agents - list.length) + ' more not listed here; the subagents section has them all.')}</div>` : '');
+    };
+    rows = u.sessions.map((x) => {
+      const opens = x.agents > 0 && x.session, open = opens && openSessions.has(x.session);
+      return `
+    <div class="row session${opens ? ' opens' : ''}${open ? ' open' : ''}"${opens ? ` data-session="${esc(x.session)}" role="button" tabindex="0" aria-expanded="${open}"` : ''}>
       ${dot(u.isActive(x))}
-      <span class="ellipsis strong">${esc(x.title)}${running(x.running)}</span>
+      <span class="name">${opens ? chev(open) : '<span class="chev"></span>'}<span class="ellipsis strong">${esc(x.title)}${running(x.running)}</span></span>
       <span class="ellipsis muted">${esc(x.project)}</span>
       <span class="mono right muted">${x.agents}</span>
       <span class="mono right muted">${usd(x.main)}</span>
       <span class="mono right">${usd(x.total)}</span>
       <span class="right muted">${ago(x.last, now)}</span>
-    </div>`);
+    </div>` + (open ? subRows(x) : '');
+    });
   }
   const shown = showAllSessions ? rows : rows.slice(0, 20);
   $('session-rows').innerHTML = head + (shown.join('') || '<div class="empty">' + L('本周还没有会话。', 'No sessions this week yet.') + '</div>');
